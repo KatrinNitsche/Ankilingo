@@ -13,6 +13,8 @@ namespace Assets.Scripts
         private string courseURL = "http://localhost:5123/Course";
         private string sectionURL = "http://localhost:5123/Section";
         private TokenResponse token;
+        private string username;
+        private string password;
 
         [Serializable]
         private class TokenResponse
@@ -41,6 +43,8 @@ namespace Assets.Scripts
 
         public void SetToken(string username, string password)
         {
+            this.username = username;
+            this.password = username;
             StartCoroutine(RequestToken(username, password, token =>
             {
                 if (!string.IsNullOrEmpty(token))
@@ -101,9 +105,9 @@ namespace Assets.Scripts
                 Debug.LogError($"{nameof(GetCourses)}: Token is null or empty. Cannot fetch courses.");
                 yield break;
             }
-
-            string url = $"{sectionURL}/{courseId.ToString()}";
-            using (UnityWebRequest webRequest = UnityWebRequest.Get(sectionURL))
+                      
+            string url = $"{sectionURL}/{courseId.ToString()}";           
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(url)) 
             {
                 webRequest.SetRequestHeader("Authorization", "Bearer " + token.token);
                 webRequest.SetRequestHeader("Accept", "application/json");
@@ -135,7 +139,6 @@ namespace Assets.Scripts
             }
         }
 
-        // Add a new course
         public IEnumerator AddCourse(CourseObject course, Action<bool> onComplete)
         {
             if (token == null || string.IsNullOrEmpty(token.token))
@@ -175,10 +178,6 @@ namespace Assets.Scripts
                 }
             }
         }
-
-        // Fix for CS1503: Argument 1: cannot convert from 'System.Guid' to 'string'
-        // The issue occurs because `course.id` is of type `Guid`, but the method expects a `string`.
-        // To fix this, we need to convert the `Guid` to a string using `course.id.ToString()`.
 
         public IEnumerator UpdateCourse(CourseObject course, Action<bool> onComplete)
         {
@@ -229,7 +228,6 @@ namespace Assets.Scripts
             }
         }
 
-        // Get a single course by ID
         public IEnumerator GetCourse(string courseId, Action<CourseObject> onCourseReceived)
         {
             if (token == null || string.IsNullOrEmpty(token.token))
@@ -276,10 +274,6 @@ namespace Assets.Scripts
                 }
             }
         }
-
-        // Fix for CS1503: Argument 1: cannot convert from 'System.Guid' to 'string'
-        // The issue occurs because `courseId` is of type `Guid`, but the method expects a `string`.
-        // To fix this, we need to convert the `Guid` to a string using `courseId.ToString()`.
 
         public IEnumerator RemoveCourse(int courseId, Action<bool> onComplete)
         {

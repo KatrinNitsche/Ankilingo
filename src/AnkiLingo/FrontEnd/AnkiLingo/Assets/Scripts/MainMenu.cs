@@ -15,7 +15,7 @@ public class MainMenu : MonoBehaviour
     [SerializeField] private CourseService CourseService;
     [SerializeField] private string username = "AnkiLingoTester";
     [SerializeField] private string password = "S#Tb3B]ww,m1AgU";
-      
+
     private void Start()
     {
         CourseDetailsPanel.SetActive(false);
@@ -39,11 +39,11 @@ public class MainMenu : MonoBehaviour
     {
         StartCoroutine(CourseService.GetCourses(courses =>
         {
-            if(courses != null)
+            if (courses != null)
             {
                 PopulateCourseButtons(courses);
             }
-        }));       
+        }));
     }
 
     private void PopulateCourseButtons(CourseObject[] courses)
@@ -70,12 +70,14 @@ public class MainMenu : MonoBehaviour
 
         StartCoroutine(CourseService.GetSections(courseObject.id, sections =>
         {
-            if (sections != null)
+            if (sections.Count() > 0)
             {
                 courseObject.Sections = sections.ToList();
-                CourseDetailsPanel.GetComponent<CourseDetailsUI>().Initialize(courseObject, false);
             }
-        }));       
+
+            CourseDetailsPanel.GetComponent<CourseDetailsUI>().Initialize(courseObject, false);
+
+        }));
     }
     public void AddCourse()
     {

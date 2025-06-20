@@ -25,10 +25,17 @@ namespace AnkiLingo.Controllers
         /// </summary>
         /// <returns>list of Section entries</returns>
         [HttpGet("{courseId}")]
-        public async Task<IEnumerable<Section>> GetSectionsForCourse(int courseId)
+        public async Task<IEnumerable<GetSectionDto>> GetSectionsForCourse(int courseId)
         {
             var data = (await SectionService.GetAll()).Where(x => x.CourseId == courseId);
-            return data;
+            return data.Select(x => new GetSectionDto()
+            {
+                Created = x.Created,
+                description = x.Description,
+                id = x.Id,
+                name = x.Name,
+                Updated = x.Updated
+            });
         }
 
         /// <summary>

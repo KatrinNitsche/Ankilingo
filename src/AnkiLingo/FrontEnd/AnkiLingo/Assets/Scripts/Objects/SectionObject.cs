@@ -1,13 +1,14 @@
-﻿namespace Assets.Scripts.Objects
+﻿using System;
+
+namespace Assets.Scripts.Objects
 {
+    [Serializable]
     public class SectionObject
     {
         public int id;
-        public int courseId;
-        public string created;
-        public string updated;
         public string name;
         public string description;
-        public string icon;
+        public string Created;
+        public string Updated;
     }
 }
