@@ -14,6 +14,6 @@ namespace Assets.Scripts
         public string description;
         public string icon;
 
-        public List<SectionObject> Sections;
+        public List<SectionObject> sections;
     }
 }

@@ -12,6 +12,7 @@ namespace Assets.Scripts
     {
         private string courseURL = "http://localhost:5123/Course";
         private string sectionURL = "http://localhost:5123/Section";
+        private string entryURL = "http://localhost:5123/Entry";
         private TokenResponse token;
         private string username;
         private string password;
@@ -41,21 +42,26 @@ namespace Assets.Scripts
             public SectionObject[] sections;
         }
 
-        public void SetToken(string username, string password)
+        public IEnumerator SetToken(string username, string password, Action<bool> onTokenSet)
         {
             this.username = username;
-            this.password = username;
-            StartCoroutine(RequestToken(username, password, token =>
+            this.password = password;
+            bool isTokenSet = false;
+
+            yield return StartCoroutine(RequestToken(username, password, token =>
             {
                 if (!string.IsNullOrEmpty(token))
                 {
                     this.token = new TokenResponse { token = token };
+                    isTokenSet = true;
                 }
                 else
                 {
                     Debug.LogError("Failed to retrieve token.");
                 }
             }));
+
+            onTokenSet?.Invoke(isTokenSet);
         }
 
         public IEnumerator GetCourses(Action<CourseObject[]> onCoursesReceived)
@@ -228,7 +234,7 @@ namespace Assets.Scripts
             }
         }
 
-        public IEnumerator GetCourse(string courseId, Action<CourseObject> onCourseReceived)
+        public IEnumerator GetCourse(int courseId, Action<CourseObject> onCourseReceived)
         {
             if (token == null || string.IsNullOrEmpty(token.token))
             {
@@ -237,7 +243,7 @@ namespace Assets.Scripts
                 yield break;
             }
 
-            if (string.IsNullOrEmpty(courseId))
+            if (courseId == 0)
             {
                 Debug.LogError($"{nameof(GetCourse)}: Course ID is null or empty.");
                 onCourseReceived?.Invoke(null);
@@ -258,7 +264,7 @@ namespace Assets.Scripts
                 {
                     try
                     {
-                        var course = JsonUtility.FromJson<CourseObject>(webRequest.downloadHandler.text);
+                        var course = JsonUtility.FromJson<CourseObject>(webRequest.downloadHandler.text);                        
                         onCourseReceived?.Invoke(course);
                     }
                     catch (Exception ex)
@@ -307,6 +313,53 @@ namespace Assets.Scripts
                 else
                 {
                     Debug.LogError($"{nameof(RemoveCourse)}: Error: {webRequest.error}");
+                    onComplete?.Invoke(false);
+                }
+            }
+        }
+
+        public IEnumerator UpdateEntry(EntryObject entry, Action<bool> onComplete)
+        {
+            if (token == null || string.IsNullOrEmpty(token.token))
+            {
+                Debug.LogError($"{nameof(UpdateCourse)}: Token is null or empty. Cannot update course.");
+                onComplete?.Invoke(false);
+                yield break;
+            }
+
+            if (entry.id == 0)
+            {
+                Debug.LogError($"{nameof(UpdateCourse)}: Entry ID is empty.");
+                onComplete?.Invoke(false);
+                yield break;
+            }
+
+            var entryToUpdate = new EditEntryDto()
+            {
+                id = entry.id,
+                LevelOnKnowledge = entry.levelOnKnowledge
+            };
+
+            string url = $"{entryURL}/{entry.id.ToString()}";
+            string jsonData = JsonConvert.SerializeObject(entryToUpdate);
+
+            using (UnityWebRequest webRequest = new UnityWebRequest(url, "PUT"))
+            {
+                byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
+                webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                webRequest.downloadHandler = new DownloadHandlerBuffer();
+                webRequest.SetRequestHeader("Authorization", "Bearer " + token.token);
+                webRequest.SetRequestHeader("Content-Type", "application/json");
+
+                yield return webRequest.SendWebRequest(); // UpdateCourse: Error: HTTP/1.1 400 Bad Request
+
+                if (webRequest.result == UnityWebRequest.Result.Success)
+                {
+                    onComplete?.Invoke(true);
+                }
+                else
+                {
+                    Debug.LogError($"{nameof(UpdateCourse)}: Error: {webRequest.error}");
                     onComplete?.Invoke(false);
                 }
             }

@@ -3,6 +3,7 @@ using AnkiLingo.Dtos;
 using AnkiLingo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace AnkiLingo.Controllers
 {
@@ -38,10 +39,45 @@ namespace AnkiLingo.Controllers
         /// <param name="id">ID of the requested course</param>
         /// <returns>requested course object</returns>
         [HttpGet("{id}", Name = "GetCourse")]
-        public async Task<Course> GetCourse([FromRoute] int id)
+        public async Task<DetailedCourseDto> GetCourse([FromRoute] int id)
         {
-            var course = courseService.GetById(id);
-            return await course;
+            var course = await courseService.GetById(id);
+            DetailedCourseDto courseDetails = new DetailedCourseDto()
+            {
+                id = course.Id,
+                Created = course.Created,
+                description = course.Description,
+                name = course.Name,
+                Sections = course.Sections.Select(x => new GetSectionDto()
+                {
+                    Updated = x.Updated,
+                    Created = x.Created,
+                    description = x.Description,
+                    id = x.Id,
+                    name = x.Name,
+                    Units = x.Units.Select(u => new GetUnitsDto()
+                    {
+                        Created = u.Created,
+                        description = u.Description,
+                        id = u.Id,
+                        name = u.Name,
+                        Updated = u.Updated,
+                        Entries = u.Entries.Select(e => new GetEntryDto()
+                        {
+                            description = e.Description,
+                            id = e.Id,
+                            name = e.Name,
+                            LastReviewed = e.LastReviewed,
+                            LevelOnKnowledge = e.LevelOnKnowledge,
+                            Value1 = e.Value1,
+                            Value2 = e.Value2
+                        }).AsEnumerable<GetEntryDto>()
+                    }).AsEnumerable<GetUnitsDto>()
+                }).AsEnumerable<GetSectionDto>(),
+                Updated = course.Updated
+            };
+
+            return courseDetails;
         }
 
         /// <summary>

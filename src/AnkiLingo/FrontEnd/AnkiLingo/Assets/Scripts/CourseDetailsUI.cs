@@ -60,9 +60,9 @@ public class CourseDetailsUI : MonoBehaviour
             Destroy(child.gameObject); // Clear old buttons
         }
 
-        if (courseData.Sections != null && courseData.Sections.Count() > 0)
+        if (courseData.sections != null && courseData.sections.Count() > 0)
         {
-            foreach (SectionObject section in courseData.Sections)
+            foreach (SectionObject section in courseData.sections)
             {
                 var sectionButton = Instantiate(SectionButonPrefab, SectionListContentContainer);
                 sectionButton.GetComponentInChildren<TextMeshProUGUI>().text = section.name;

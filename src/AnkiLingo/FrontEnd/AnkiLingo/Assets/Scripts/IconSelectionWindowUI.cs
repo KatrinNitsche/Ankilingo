@@ -8,13 +8,18 @@ public class IconSelectionWindowUI : MonoBehaviour
     [SerializeField] private GameObject iconButtonPrefab;
     [SerializeField] private Transform iconContainer;
     [SerializeField] private Sprite[] iconList;
-
+    
     public event Action<Sprite> onIconClicked;
-
+    
     private void Start()
     {
         RemoveIconsFromContainer();
         AddIconButtonsToContainer();
+    }
+
+    public void OpenPanel()
+    {
+        gameObject.SetActive(true);
     }
 
     private void AddIconButtonsToContainer()

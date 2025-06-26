@@ -1,15 +1,11 @@
 using Assets.Scripts;
 using Assets.Scripts.Helpers;
 using System;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
 
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] private GameObject CourseDetailsPanel;
-    [SerializeField] private GameObject ManageCoursesPanel;
     [SerializeField] private GameObject CourseButtonPrefab;
     [SerializeField] private Transform CourseContainer;
     [SerializeField] private CourseService CourseService;
@@ -18,21 +14,17 @@ public class MainMenu : MonoBehaviour
 
     private void Start()
     {
-        CourseDetailsPanel.SetActive(false);
-        ManageCoursesPanel.SetActive(false);
-        CourseService.SetToken(username, password);
+        StartCoroutine(CourseService.SetToken(username, password, result =>
+        {
+
+        }));
+
         EventsLib.CourseDetailsWindowClosed.OnEventCalled += RefreshCourseList;
     }
 
     private void OnDisable()
     {
         EventsLib.CourseDetailsWindowClosed.OnEventCalled -= RefreshCourseList;
-    }
-
-    public void ToggleManageCoursesPanel()
-    {
-        ManageCoursesPanel.SetActive(!ManageCoursesPanel.activeSelf);
-        LoadCourses();
     }
 
     private void LoadCourses()
@@ -59,30 +51,7 @@ public class MainMenu : MonoBehaviour
             CourseButton courseButton = buttonObj.GetComponent<CourseButton>();
             courseButton.course = course;
             var courseObject = courseButton.Initialize();
-
-            buttonObj.GetComponent<Button>().onClick.AddListener(() => DisplayCourseDetails(courseObject));
         }
-    }
-
-    private void DisplayCourseDetails(CourseObject courseObject)
-    {
-        CourseDetailsPanel.SetActive(true);
-
-        StartCoroutine(CourseService.GetSections(courseObject.id, sections =>
-        {
-            if (sections.Count() > 0)
-            {
-                courseObject.Sections = sections.ToList();
-            }
-
-            CourseDetailsPanel.GetComponent<CourseDetailsUI>().Initialize(courseObject, false);
-
-        }));
-    }
-    public void AddCourse()
-    {
-        CourseDetailsPanel.SetActive(true);
-        CourseDetailsPanel.GetComponent<CourseDetailsUI>().Initialize(new CourseObject(), true);
     }
 
     private void RefreshCourseList(object sender, EventArgs e)
