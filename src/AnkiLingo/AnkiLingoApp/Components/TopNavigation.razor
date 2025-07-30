@@ -1,0 +1,77 @@
+﻿@using AnkiLingoExcelService
+@using AnkiLingoExcelService.Data
+@* Top navigation bar with clickable entries *@
+<div id="top-navigation-container">
+    <div class="top-nav">
+
+        @if (currentCourse != null)
+        {
+            <div class="top-nav-item">
+                <img src=@currentCourseIconPath alt="Course" class="top-nav-icon" />
+                <span class="top-nav-value">@currentCourse.Name</span>
+            </div>
+        }
+        else
+        {
+            <div class="top-nav-item">
+                <img src="images/course.png" alt="Course" class="top-nav-icon" />
+                <span class="top-nav-value">Loading...</span>
+            </div>
+        }
+
+        @if (streakActive)
+        {
+            <div class="top-nav-item" @onclick="ShowStreak">
+                <img src="images/streak.png" alt="Streak" class="top-nav-icon" />
+            </div>
+        }
+        else
+        {
+            <div class="top-nav-item">
+                <img src="images/streak-non.png" alt="Flame" class="top-nav-icon" />
+                <span class="top-nav-value">@streakCount</span>
+            </div>
+        }
+        <div class="top-nav-item" @onclick="ShowGems">
+            <img src="images/gem.png" alt="Gems" class="top-nav-icon" />
+            <span class="top-nav-value blue">@gemsCount</span>
+        </div>
+        <div class="top-nav-item" @onclick="ShowHearts">
+            <img src="images/heart.png" alt="Hearts" class="top-nav-icon" />
+            <span class="top-nav-value red">@heartsCount</span>
+        </div>
+    </div>
+</div>
+@code {
+    private int streakCount = 213; // Example value, replace with actual data source
+    private int gemsCount = 3613; // Example value, replace with actual data source
+    private int heartsCount = 4; // Example value, replace with actual data source
+    private CourseData currentCourse;
+    private List<string> courseList = new List<string>();
+    private string errorMessage;
+    private bool streakActive = false;
+
+    private string currentCourseIconPath => currentCourse != null ? $"images/icons/{currentCourse.Icon}.png" : "images/course.png";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var filePath = @"C:\temp\AnkiLingo";
+            courseList = ExcelService.GetCourseNames(filePath);
+            var currentCoursePath = $"{filePath}\\{courseList.FirstOrDefault()}.xlsx";
+            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error fetching course list: {ex.Message}");
+            errorMessage = "Failed to load course list. Please check the console for details.";
+        }
+    }
+
+
+    void ShowStreak() { /* Reveal streak details below */ }
+    void ShowGems() { /* Reveal gems details below */ }
+    void ShowHearts() { /* Reveal hearts details below */ }
+}

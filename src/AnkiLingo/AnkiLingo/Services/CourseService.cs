@@ -14,9 +14,23 @@ namespace AnkiLingo.Services
 
         public async Task<Course> Add(Course entry)
         {
-            courseRepository.Add(entry);
-            courseRepository.Commit();
-            return entry;
+            // check if the course already exists
+            var existingCourse = courseRepository.GetAll().FirstOrDefault(c => c.Name == entry.Name);
+            if (existingCourse != null)
+            {
+                // If the course exists, update it instead of adding a new one
+                existingCourse.Description = entry.Description;
+                existingCourse.Icon = entry.Icon;
+                existingCourse.Updated = DateTime.Now;
+                existingCourse.Sections = entry.Sections;
+                return courseRepository.Update(existingCourse);
+            }
+            else
+            {
+                courseRepository.Add(entry);
+                courseRepository.Commit();
+                return entry;
+            }            
         }
 
         public async Task<IEnumerable<Course>> GetAll()

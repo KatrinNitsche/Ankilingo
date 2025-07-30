@@ -10,5 +10,6 @@ namespace AnkiLingo.Data
         public DbSet<Section> Sections { get; set; }
         public DbSet<Unit> Units { get; set; }
         public DbSet<Entry> Entries { get; set; }
+        public DbSet<ImageEntry> ImageEntries { get; set; }
     }
 }

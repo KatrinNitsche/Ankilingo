@@ -2,7 +2,6 @@
 using AnkiLingo.Dtos;
 using AnkiLingo.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnkiLingo.Controllers

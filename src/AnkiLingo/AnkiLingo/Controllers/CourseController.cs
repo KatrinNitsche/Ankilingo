@@ -3,7 +3,6 @@ using AnkiLingo.Dtos;
 using AnkiLingo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 
 namespace AnkiLingo.Controllers
 {
@@ -48,29 +47,25 @@ namespace AnkiLingo.Controllers
                 Created = course.Created,
                 description = course.Description,
                 name = course.Name,
+                icon = course.Icon,
                 Sections = course.Sections.Select(x => new GetSectionDto()
                 {
-                    Updated = x.Updated,
-                    Created = x.Created,
                     description = x.Description,
                     id = x.Id,
-                    name = x.Name,
-                    Units = x.Units.Select(u => new GetUnitsDto()
+                    name = x.Name,                    
+                    units = x.Units.Select(u => new GetUnitsDto()
                     {
-                        Created = u.Created,
                         description = u.Description,
                         id = u.Id,
-                        name = u.Name,
-                        Updated = u.Updated,
-                        Entries = u.Entries.Select(e => new GetEntryDto()
+                        name = u.Name,                    
+                        entries = u.Entries.Select(e => new GetEntryDto()
                         {
                             description = e.Description,
                             id = e.Id,
-                            name = e.Name,
-                            LastReviewed = e.LastReviewed,
-                            LevelOnKnowledge = e.LevelOnKnowledge,
-                            Value1 = e.Value1,
-                            Value2 = e.Value2
+                            name = e.Name,                          
+                            levelOnKnowledge = e.LevelOnKnowledge,
+                            value1 = e.Value1,
+                            value2 = e.Value2
                         }).AsEnumerable<GetEntryDto>()
                     }).AsEnumerable<GetUnitsDto>()
                 }).AsEnumerable<GetSectionDto>(),
@@ -115,7 +110,8 @@ namespace AnkiLingo.Controllers
                 Description = courseDto.description,
                 Name = courseDto.name,
                 Icon = courseDto.icon,
-                Updated = DateTime.Now
+                Updated = DateTime.Now,
+                Sections = (ICollection<Section>)courseDto.sections
             };
 
             var result = courseService.Update(course);

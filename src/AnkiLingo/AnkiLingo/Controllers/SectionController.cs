@@ -30,11 +30,9 @@ namespace AnkiLingo.Controllers
             var data = (await SectionService.GetAll()).Where(x => x.CourseId == courseId);
             return data.Select(x => new GetSectionDto()
             {
-                Created = x.Created,
                 description = x.Description,
                 id = x.Id,
                 name = x.Name,
-                Updated = x.Updated
             });
         }
 

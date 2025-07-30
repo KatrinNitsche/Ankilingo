@@ -42,6 +42,7 @@ namespace AnkiLingo.Services
             entry.Updated = DateTime.Now;
             entryToUpdate.Name = entry.Name;
             entryToUpdate.Description = entry.Description;
+            entryToUpdate.LevelOnKnowledge = entry.LevelOnKnowledge;
 
             return EntryRepository.Update(entryToUpdate);
         }

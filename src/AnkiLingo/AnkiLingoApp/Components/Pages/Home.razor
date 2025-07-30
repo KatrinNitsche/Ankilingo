@@ -1,0 +1,152 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using AnkiLingoExcelService
+@using AnkiLingoExcelService.Data
+
+<PageTitle>AnkiLingo</PageTitle>
+
+<TopNavigation />
+
+<div class="d-flex flex-row gap-3">
+    <SiteNavigation />
+
+    <div id="course-content" class="w-75">
+
+        @if (currentCourse == null)
+        {
+            <p>Loading...</p>
+        }
+        else if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="text-danger">@errorMessage</p>
+        }
+        else
+        {
+            @* course content *@
+            var sectionIndex = 1;
+            @foreach (SectionData sectionData in currentCourse.Sections)
+            {
+                var unitIndex = 1;
+                @foreach (UnitData unitData in sectionData.Units)
+                {
+                    <div class="section-header w-75 m-auto" style="background-color: @unitData.BackgroundColor">
+                        <p>Section @sectionIndex, Unit @unitIndex</p>
+                        <b>@sectionData.Name - @unitData.Name</b>
+                    </div>
+
+                    <div class="lesson-buttons d-flex flex-column align-items-center">
+                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                @onclick="() => SetCurrentLesson(unitData.Entries.Take(10).ToList())">
+                            <span>
+                                <i class="material-icons">menu_book</i>
+                            </span>
+                        </button>
+                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
+                            <span>2</span>
+                        </button>
+                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
+                            <span>3</span>
+                        </button>
+                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
+                            <span>4</span>
+                        </button>
+
+                        @if (unitData.Entries.Count > 10)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(10).Take(10).ToList())">
+                                <span>5</span>
+                            </button>                         
+                        }
+
+                        @if (unitData.Entries.Count > 20)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(20).Take(10).ToList())">
+                                <span>6</span>
+                            </button>                           
+                        }
+
+                        @if (unitData.Entries.Count > 30)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(30).Take(10).ToList())">
+                                <span>7</span>
+                            </button>
+                        }
+
+                        @if (unitData.Entries.Count > 40)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(40).Take(10).ToList())">
+                                <span>8</span>
+                            </button>
+                        }
+
+                        @if (unitData.Entries.Count > 50)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(50).Take(10).ToList())">
+                                <span>9</span>
+                            </button>
+                        }
+
+                        @if (unitData.Entries.Count > 60)
+                        {
+                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(60).ToList())">
+                                <span>10</span>
+                            </button>                            
+                        }
+                    </div>
+
+                    unitIndex++;
+                }
+                sectionIndex++;
+            }
+        }
+    </div>
+</div>
+
+<ReadingComponent Entries="currentLesson" Show="showCurrentLessonModal" />
+
+
+@code {
+    private List<string> courseList = new List<string>();
+    private string errorMessage;
+    private CourseData currentCourse;
+    private List<EntryData> currentLesson = new List<EntryData>();
+    private bool showCurrentLessonModal = false;
+
+    private List<string> BackgroundColours = new List<string>() { "#58cc02", "#ffb900", "#ff4c4c", "#00a2ff", "#a200ff" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var filePath = @"C:\temp\AnkiLingo";
+            courseList = ExcelService.GetCourseNames(filePath);
+            var currentCoursePath = $"{filePath}\\{courseList.FirstOrDefault()}.xlsx";
+            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+
+            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
+            {
+                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
+            }
+            ;
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error fetching course list: {ex.Message}");
+            errorMessage = "Failed to load course list. Please check the console for details.";
+        }
+    }
+
+    protected void SetCurrentLesson(List<EntryData> entries)
+    {
+        currentLesson = entries;
+        showCurrentLessonModal = true;
+        StateHasChanged();
+    }
+}

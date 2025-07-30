@@ -1,0 +1,38 @@
+﻿@using AnkiLingoExcelService.Data
+
+@if (Show)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="background-color: white; border-radius: 10px;">
+            <h2>@Title</h2>
+            <ul>
+                @foreach (var entry in Entries)
+                {
+                    <li>
+                        <strong>@entry.Value1</strong> - @entry.Value2
+                        <br />
+                        Knowledge: @entry.LevelOfKnowledge, Last Reviewed: @entry.LastReviewed.ToShortDateString()
+                    </li>
+                }
+            </ul>
+            <button class="btn btn-primary w-25" @onclick="CloseModal">Close</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "Reading Lessons Content";
+    [Parameter] public List<EntryData> Entries { get; set; } = new List<EntryData>();
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void CloseModal()
+    {
+        Show = false;
+        StateHasChanged();
+        if (OnClose.HasDelegate)
+        {
+            OnClose.InvokeAsync();
+        }
+    }
+}
