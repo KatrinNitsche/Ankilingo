@@ -134,7 +134,8 @@ namespace AnkiLingoExcelService
                     // E<row> can be empty but than should be set to min date
                     LastReviewed = worksheet.Cell($"E{row}").IsEmpty()
                                    ? DateTime.MinValue
-                                   : worksheet.Cell($"E{row}").GetValue<DateTime>()
+                                   : worksheet.Cell($"E{row}").GetValue<DateTime>(),
+                    ReviewCount = worksheet.Cell($"F{row}").GetValue<int>()
                 };
 
                 // Find the unit for this entry
@@ -148,6 +149,49 @@ namespace AnkiLingoExcelService
             }
 
             return section;
+        }
+
+        public static List<EntryData> GetEntries(string filePath, string sectionName)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return new List<EntryData>();
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(sectionName); // 1-based index for the first worksheet
+            int row = 1;
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                row++;
+            }
+            row++; // Skip the header row for entries
+            var entries = new List<EntryData>();
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                if (worksheet.Cell($"B{row}").GetValue<string>() == "Value 1")
+                {
+                    row++; // Skip the header row for entries
+                    continue;
+                }
+
+                var entry = new EntryData
+                {
+                    Value1 = worksheet.Cell($"B{row}").GetValue<string>(),
+                    Value2 = worksheet.Cell($"C{row}").GetValue<string>(),
+                    LevelOfKnowledge = worksheet.Cell($"D{row}").IsEmpty()
+                                      ? 0
+                                      : worksheet.Cell($"D{row}").GetValue<int>(),
+                    LastReviewed = worksheet.Cell($"E{row}").IsEmpty()
+                                   ? DateTime.MinValue
+                                   : worksheet.Cell($"E{row}").GetValue<DateTime>(),
+                    ReviewCount = worksheet.Cell($"F{row}").GetValue<int>()
+                };
+
+                entries.Add(entry);
+                row++;
+            }
+            return entries;
         }
 
         /// <summary>
@@ -184,6 +228,57 @@ namespace AnkiLingoExcelService
                 {
                     worksheet.Cell($"D{row}").Value = levelOfKnowlege;
                     worksheet.Cell($"E{row}").Value = DateTime.Now; // Update Last Reviewed to now
+
+                    var reviewCountCell = worksheet.Cell($"F{row}");
+                    var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
+                    /*
+                        Day 1: Initial learning
+                        Day 2: First review
+                        Day 4: Second review
+                        Day 8: Third review
+                        Day 15: Fourth review
+                        Day 30: Fifth review
+                    */
+                    var newReviewCount = 1;
+                    if (lastReviewed.Date == DateTime.MinValue.Date)
+                    {
+                        newReviewCount = 1; // Initial learning
+                    }
+                    else
+                    {
+                        var daysSinceLastReview = (DateTime.Now - lastReviewed).TotalDays;
+                        if (daysSinceLastReview < 1)
+                        {
+                            newReviewCount = 1; // Initial learning
+                        }
+                        else if (daysSinceLastReview < 2)
+                        {
+                            newReviewCount = 2; // First review
+                        }
+                        else if (daysSinceLastReview < 4)
+                        {
+                            newReviewCount = 3; // Second review
+                        }
+                        else if (daysSinceLastReview < 8)
+                        {
+                            newReviewCount = 4; // Third review
+                        }
+                        else if (daysSinceLastReview < 15)
+                        {
+                            newReviewCount = 5; // Fourth review
+                        }
+                        else if (daysSinceLastReview < 30)
+                        {
+                            newReviewCount = 6; // Fifth review
+                        }
+                        else
+                        {
+                            newReviewCount = 7; // More than a month since last review
+                        }
+                    }
+
+                    worksheet.Cell($"F{row}").Value = newReviewCount;
+
                     workbook.Save();
                     return true;
                 }

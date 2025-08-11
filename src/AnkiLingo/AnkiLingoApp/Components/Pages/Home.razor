@@ -26,99 +26,91 @@
             var sectionIndex = 1;
             @foreach (SectionData sectionData in currentCourse.Sections)
             {
+                var completedSection = true;
                 var unitIndex = 1;
                 @foreach (UnitData unitData in sectionData.Units)
                 {
+                    var completedUnit = true;
+
                     <div class="section-header w-75 m-auto" style="background-color: @unitData.BackgroundColor">
                         <p>Section @sectionIndex, Unit @unitIndex</p>
-                        <b>@sectionData.Name - @unitData.Name</b>
+                        <b>@sectionData.Name - @unitData.Name (@unitData.Entries.Count())</b>
                     </div>
 
                     <div class="lesson-buttons d-flex flex-column align-items-center">
-                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                @onclick="() => SetCurrentLesson(unitData.Entries.Take(10).ToList())">
-                            <span>
-                                <i class="material-icons">menu_book</i>
-                            </span>
-                        </button>
-                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
-                            <span>2</span>
-                        </button>
-                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
-                            <span>3</span>
-                        </button>
-                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor">
-                            <span>4</span>
-                        </button>
+                        @{
+                            var devider = 10;
+                            if (unitData.Entries.Count < 10)
+                            {
+                                devider = unitData.Entries.Count;
+                            }
 
-                        @if (unitData.Entries.Count > 10)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(10).Take(10).ToList())">
-                                <span>5</span>
-                            </button>                         
-                        }
+                            for (var blockIndex = 0; blockIndex < unitData.Entries.Count / devider; blockIndex++)
+                            {
+                                var startIndex = blockIndex * devider;
+                                var endIndex = Math.Min(startIndex + devider, unitData.Entries.Count);
+                                var entriesBlock = unitData.Entries.Skip(startIndex).Take(endIndex - startIndex).ToList();
+                                <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                        @onclick="() => SetCurrentLesson(entriesBlock, sectionData.Name, unitData.Name, false)">
+                                    <span>
+                                        <i class="material-icons">menu_book</i>
+                                    </span>
+                                </button>
+                                <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                        @onclick="() => SetCurrentLesson(entriesBlock, sectionData.Name, unitData.Name, true)">
+                                    <span>
+                                        @GetPercentageOfKnowledge(entriesBlock)%
+                                    </span>
+                                </button>
 
-                        @if (unitData.Entries.Count > 20)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(20).Take(10).ToList())">
-                                <span>6</span>
-                            </button>                           
-                        }
-
-                        @if (unitData.Entries.Count > 30)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(30).Take(10).ToList())">
-                                <span>7</span>
-                            </button>
-                        }
-
-                        @if (unitData.Entries.Count > 40)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(40).Take(10).ToList())">
-                                <span>8</span>
-                            </button>
-                        }
-
-                        @if (unitData.Entries.Count > 50)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(50).Take(10).ToList())">
-                                <span>9</span>
-                            </button>
-                        }
-
-                        @if (unitData.Entries.Count > 60)
-                        {
-                            <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
-                                    @onclick="() => SetCurrentLesson(unitData.Entries.Skip(60).ToList())">
-                                <span>10</span>
-                            </button>                            
+                                // if the knowledge percentage is less than 75 for the current block the remaining blocks will not be rendered
+                                @if (GetPercentageOfKnowledge(entriesBlock) < 75)
+                                {
+                                    completedUnit = false;
+                                    break;
+                                }
+                            }
                         }
                     </div>
 
+                    @if (!completedUnit)
+                    {
+                        completedSection = false;
+                        break;
+                    }
+
                     unitIndex++;
                 }
+
+                @if (!completedSection) { break; }
                 sectionIndex++;
             }
         }
     </div>
 </div>
 
-<ReadingComponent Entries="currentLesson" Show="showCurrentLessonModal" />
-
+<ReadingComponent Entries="currentLesson" Show="showCurrentLessonModal" OnClose="() => showCurrentLessonModal = false" />
+<StudyComponent Entries="currentLesson"
+                Show="showStudyModal"
+                OnClose="() => showStudyModal = false"
+                OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)" />
 
 @code {
     private List<string> courseList = new List<string>();
     private string errorMessage;
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
+    private string currentSection;
+    private string currentUnit;
     private bool showCurrentLessonModal = false;
+    private bool showStudyModal = false;
 
-    private List<string> BackgroundColours = new List<string>() { "#58cc02", "#ffb900", "#ff4c4c", "#00a2ff", "#a200ff" };
+    // List of 20 different background colours for units in the format of hex codes
+    private List<string> BackgroundColours = new List<string>()
+    {
+        "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
+        "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,7 +125,7 @@
             {
                 unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
             }
-            ;
+        ;
         }
         catch (Exception ex)
         {
@@ -143,10 +135,95 @@
         }
     }
 
-    protected void SetCurrentLesson(List<EntryData> entries)
+    protected void UpdateEntry(string value1, string value2, int levelOfKnowledge)
     {
+        if (levelOfKnowledge > 10) return;
+        if (levelOfKnowledge < 0) return;
+
+        var filePath = @"C:\temp\AnkiLingo";
+        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
+        ExcelService.UpdateEntry(currentCoursePath, currentSection, currentUnit, value1, value2, levelOfKnowledge);
+    }
+
+    protected void SetCurrentLesson(List<EntryData> entries, string sectionName, string unitName, bool study = false)
+    {
+        currentSection = sectionName;
+        currentUnit = unitName;
         currentLesson = entries;
-        showCurrentLessonModal = true;
+
+        // get additional entries from the course
+        var filePath = @"C:\temp\AnkiLingo";
+        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
+
+        if (study)
+        {
+            var entriesToAdd = new List<EntryData>();
+            var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
+           .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
+                       !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
+
+            /*
+              Initial Review: Ideally, you should review the material within 24 hours of first learning it. 
+                              This helps solidify the information in your short-term memory. 
+              Subsequent Reviews: The intervals between subsequent reviews should gradually increase. A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on. However, you can adjust this based on how well you remember the material. If you're struggling, you can shorten the intervals. If you're easily remembering, you can lengthen them.
+              
+                Here's a sample spaced repetition schedule:
+                Day 1: Initial learning
+                Day 2: First review
+                Day 4: Second review
+                Day 8: Third review
+                Day 15: Fourth review
+                Day 30: Fifth review
+             */
+           
+            // get entries that where reviewed 1 time and last reviewed more than 1 day ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
+            // get entries that where reviewed 2 times and last reviewed more than 3 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
+            // get entries that where reviewed 3 times and last reviewed more than 7 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
+            // get entries that where reviewed 4 times and last reviewed more than 14 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
+            // get entries that where reviewed 5 times and last reviewed more than 30 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
+            
+
+            entries.AddRange(entriesToAdd);
+            showStudyModal = true;
+        }
+        else
+        {
+            showCurrentLessonModal = true;
+        }
+
         StateHasChanged();
+    }
+
+    protected int GetPercentageOfKnowledge(List<EntryData>
+    entries)
+    {
+        if (entries == null || !entries.Any())
+        {
+            return 0;
+        }
+        var sumOfKnowledge = GetSumOfKnowledge(entries);
+        var maxPossibleKnowledge = GetMaxPossibleKnoledge(entries);
+        return (int)((double)sumOfKnowledge / maxPossibleKnowledge * 100);
+    }
+
+    protected int GetSumOfKnowledge(List<EntryData>
+        entries)
+    {
+        if (entries == null || !entries.Any())
+        {
+            return 0;
+        }
+        return entries.Sum(e => e.LevelOfKnowledge);
+    }
+
+    protected int GetMaxPossibleKnoledge(List<EntryData>
+        entries)
+    {
+        return entries.Count() * 10;
     }
 }

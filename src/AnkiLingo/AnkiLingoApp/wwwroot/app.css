@@ -1,3 +1,9 @@
+:root {
+    --primary-colour: #58cc02;
+    --question-colour: #1CB0F6;
+}
+
+
 h1:focus {
     outline: none;
 }
@@ -27,6 +33,16 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+.btn-primary {
+    background-color: var(--primary-colour) !important;
+}
+
+    .btn-primary:hover {
+        background-color: white !important;
+        border-color: var(--primary-colour) !important;
+        color: var(--primary-colour) !important;
+    }
 
 /* modal window */
 .modal-overlay {
@@ -70,8 +86,8 @@ h1:focus {
 
 .lesson-buttons {
     display: flex;
-    flex-direction:column;
-    justify-content: center;    
+    flex-direction: column;
+    justify-content: center;
     gap: 1rem;
     margin-top: 1.5rem;
     padding-bottom: 5rem;
@@ -86,7 +102,7 @@ h1:focus {
     background-color: #58cc02;
     position: relative;
     left: 0;
-    transition: left 0.3s;   
+    transition: left 0.3s;
 }
 
     /* Wave effect: adjust amplitude and frequency as needed */
@@ -122,14 +138,50 @@ h1:focus {
         left: calc(50px * sin(8 * 0.8));
     }
 
-    .lesson-botton:nth-child(9) {
-        left: calc(50px * sin(9 * 0.8));
+
+/* Modals */
+.modal-content ul {
+    list-style: none;
+    display: flex;
+    flex-flow: row;
+    flex-wrap: wrap
+}
+
+    .modal-content ul li {
+        padding: 5px;
+        border: 1px solid black;
+        border-radius: 10px;
+        margin: 10px;
+        width: 40%;
     }
 
-    .lesson-botton:nth-child(10) {
-        left: calc(50px * sin(10 * 0.8));
+        .modal-content ul li span {
+            margin-right: 10px;
+        }
+
+/* study modal */
+.multiple-choice-questions {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    margin: 3rem;
+}
+
+    .multiple-choice-questions button {
+        padding: 10px;
+        margin: 10px;
     }
-/* Add more as needed */
+
+.btn-question {
+    background-color: var(--question-colour) !important;
+    color: white !important;
+}
+
+    .btn-question:hover {
+        background-color: white !important;
+        color: var(--question-colour) !important;
+        border-color: var(--question-colour) !important;
+    }
 
 /* top navigation */
 #top-navigation-container {
@@ -196,6 +248,7 @@ h1:focus {
     top: 20px;
     left: 20px;
 }
+
 .sidebar-nav {
     width: 260px;
     background: #fff;

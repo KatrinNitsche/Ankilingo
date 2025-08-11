@@ -30,5 +30,6 @@
         public string Value2 { get; set; }
         public int LevelOfKnowledge { get; set; }
         public DateTime LastReviewed { get; set; }
+        public int ReviewCount { get; set; } = 0;
     }
 }

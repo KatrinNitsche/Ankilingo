@@ -1,0 +1,305 @@
+﻿@using AnkiLingoApp.Helpers
+@using AnkiLingoApp.Models
+@using AnkiLingoExcelService.Data
+
+@if (Show)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="background-color: white; border-radius: 10px;">
+            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>
+            <small class="text-muted">Correct Answers: @correctAnswersCount, Incorrect Answers: @incorrectAnswersCount</small>
+            <hr />
+            @{
+                Question entry = questions.ElementAt(currentQuestionIndex);               
+                switch (entry.QuestionType)
+                {
+                    case QuestionType.MultipleChoiceValue1:
+                    case QuestionType.MultipleChoiceValue2:
+                        <div class="multiple-choice">
+                            <h3 class="text-center">@entry.QuestionText</h3>
+                            <br />
+                            <div class="multiple-choice-questions">
+                                @foreach (var answerOption in entry.Options)
+                                {
+                                    <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption)">@answerOption</button>
+                                }
+                            </div>
+                        </div>
+                        break;
+                    case QuestionType.InputValue1:
+                    case QuestionType.InputValue2:
+                        <div class="input-question">
+                            <h3 class="text-center">@entry.QuestionText</h3>
+                            <br />
+                            <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
+                            <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer)">Submit Answer</button>
+                        </div>
+                        break;
+                    case QuestionType.ListModelValue1:
+                    case QuestionType.ListModelValue2:
+                        <div class="list-mode">
+                            <div class="row">
+                                <div class="col">
+                                    @foreach (var leftValue in entry.LeftValues)
+                                    {
+                                        if (leftEntriesRemoved.Contains(leftValue)) continue; // Skip removed entries
+                                                                                              <button class="btn btn-@((selectedLeftValue == leftValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectLeft(leftValue)">@leftValue</button>
+                                    }
+                                </div>
+                                <div class="col">
+                                    @foreach (var rightValue in entry.RightValues)
+                                    {
+                                        if (rightEntriesRemoved.Contains(rightValue)) continue; // Skip removed entries
+                                                                                                <button class="btn btn-@((selectedRightValue == rightValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectRight(rightValue)"> @rightValue</button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        break;
+                }
+            }
+            <hr />
+            <button class="btn btn-primary w-25" @onclick="CloseModal">Close</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "Study Lesson";
+    [Parameter] public List<EntryData> Entries { get; set; } = new List<EntryData>();
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<EntryData> OnUpdateEntry { get; set; }
+    [Inject] private ISoundPlayer soundPlayer { get; set; }
+
+    private List<Question> questions = new List<Question>();
+    private int currentQuestionIndex = 0;
+    private int correctAnswersCount = 0;
+    private int incorrectAnswersCount = 0;
+    private string selectedLeftValue;
+    private string selectedRightValue;
+    private bool started = false;
+
+    private List<string> leftEntriesRemoved = new List<string>();
+    private List<string> rightEntriesRemoved = new List<string>();
+
+    protected override void OnParametersSet()
+    {
+        if (Entries.Count() == 0 || started) return;
+        SetQuestions();
+    }
+
+    private void SetQuestions()
+    {
+        questions.Clear();
+        Entries = Entries.OrderBy(e => Guid.NewGuid()).ToList();
+
+        foreach (var entry in Entries)
+        {
+            var questionType = GetRandomQuestionTypeFromEnum();
+            var possibleAnswers = new List<string>();
+            var questionText = entry.Value1; // Default question text
+            var answerText = entry.Value2; // Default answer text
+            var difficultyLevel = 3;
+            var leftEntries = new List<string>();
+            var rightEntries = new List<string>();
+            if (entry.LevelOfKnowledge > 3) difficultyLevel = 4;
+
+            switch (questionType)
+            {
+                case QuestionType.MultipleChoiceValue1:
+                    questionText = entry.Value2; // Use Value2 as the question text
+                    answerText = entry.Value1; // Use Value1 as the answer text
+                    possibleAnswers = Entries.Where(e => e != entry).OrderBy(e => Guid.NewGuid()).Take(difficultyLevel).Select(x => x.Value1).ToList();
+                    possibleAnswers.Add(entry.Value1);  // Add the correct answer to the options
+                    break;
+
+                case QuestionType.MultipleChoiceValue2:
+                    questionText = entry.Value1; // Use Value1 as the question text
+                    answerText = entry.Value2; // Use Value2 as the answer text
+                    possibleAnswers = Entries.Where(e => e != entry).OrderBy(e => Guid.NewGuid()).Take(difficultyLevel).Select(x => x.Value2).ToList();
+                    possibleAnswers.Add(entry.Value2);  // Add the correct answer to the options
+
+                    // shuffle the possible options
+                    possibleAnswers = possibleAnswers.OrderBy(o => Guid.NewGuid()).ToList();
+                    break;
+
+                case QuestionType.InputValue1:
+                    questionText = entry.Value2; // Use Value2 as the question text
+                    answerText = entry.Value1; // Use Value1 as the answer text
+                    break;
+                case QuestionType.InputValue2:
+                    questionText = entry.Value1; // Use Value1 as the question text
+                    answerText = entry.Value2; // Use Value2 as the answer text
+                    break;
+                case QuestionType.ListModelValue1:
+                    var listEntries = Entries.Where(e => e != entry).OrderBy(e => Guid.NewGuid()).Take(5).ToList();
+                    foreach (var leftEntry in listEntries)
+                    {
+                        var leftValue = leftEntry.Value1;
+                        var rightEntry = Entries.FirstOrDefault(e => e.Value1 == leftEntry.Value1).Value2;
+                        leftEntries.Add(leftValue);
+                        rightEntries.Add(rightEntry);
+                    }
+                    break;
+                case QuestionType.ListModelValue2:
+                    var listEntries2 = Entries.Where(e => e != entry).OrderBy(e => Guid.NewGuid()).Take(5).ToList();
+                    foreach (var leftEntry in listEntries2)
+                    {
+                        var leftValue = leftEntry.Value2;
+                        var rightEntry = Entries.FirstOrDefault(e => e.Value2 == leftEntry.Value2).Value1;
+                        leftEntries.Add(leftValue);
+                        rightEntries.Add(rightEntry);
+                    }
+                    break;
+            }
+            // shuffle the left and right entries
+            leftEntries = leftEntries.OrderBy(o => Guid.NewGuid()).ToList();
+            rightEntries = rightEntries.OrderBy(o => Guid.NewGuid()).ToList();
+
+            questions.Add(new Question
+            {
+                Value1 = entry.Value1,
+                Value2 = entry.Value2,
+
+                QuestionText = questionText,
+                AnswerText = answerText,
+                LevelOfKnowledge = entry.LevelOfKnowledge,
+                LastReviewed = entry.LastReviewed,
+                QuestionType = questionType,
+                Options = possibleAnswers,
+                LeftValues = leftEntries,
+                RightValues = rightEntries
+            });
+        }
+
+        started = true;
+    }
+
+    private QuestionType GetRandomQuestionTypeFromEnum()
+    {
+        var values = Enum.GetValues(typeof(QuestionType));
+        return (QuestionType)values.GetValue(new Random().Next(values.Length));
+    }
+
+    private void CheckAnswer(string selectedAnswer)
+    {
+        var currentQuestion = questions[currentQuestionIndex];
+        if (currentQuestion.Options.Contains(selectedAnswer) || currentQuestion.AnswerText.ToLower().Contains(selectedAnswer.ToLower()))
+        {
+            // Correct answer logic
+            soundPlayer.Play("audio/correct.mp3");
+            OnUpdateEntry.InvokeAsync(new EntryData
+            {
+                Value1 = currentQuestion.Value1,
+                Value2 = currentQuestion.Value2,
+                LevelOfKnowledge = currentQuestion.LevelOfKnowledge + 1,
+                LastReviewed = DateTime.Now
+            });
+            correctAnswersCount++;
+        }
+        else
+        {
+            // Incorrect answer logic
+            soundPlayer.Play("audio/wrong.mp3");
+            OnUpdateEntry.InvokeAsync(new EntryData
+            {
+                Value1 = currentQuestion.Value1,
+                Value2 = currentQuestion.Value2,
+                LevelOfKnowledge = Math.Max(currentQuestion.LevelOfKnowledge - 1, 0),
+                LastReviewed = DateTime.Now
+            });
+            incorrectAnswersCount++;
+        }
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= questions.Count)
+        {
+            CloseModal();
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void SelectLeft(string leftValue)
+    {
+        selectedLeftValue = leftValue;
+        if (!string.IsNullOrEmpty(selectedRightValue))
+        {
+            CheckListAnswer();
+        }
+    }
+
+    private void SelectRight(string rightValue)
+    {
+        selectedRightValue = rightValue;
+        if (!string.IsNullOrEmpty(selectedLeftValue))
+        {
+            CheckListAnswer();
+        }
+    }
+
+    private void CheckListAnswer()
+    {
+        var currentEntry = Entries.FirstOrDefault(e => e.Value1 == selectedLeftValue || e.Value1 == selectedRightValue);
+        // check if there is a correct combination of left and right value in the Entries list for Value1 and Value2
+        var checkIfAnswerIsCorrect = Entries.Any(e => (e.Value1 == selectedLeftValue && e.Value2 == selectedRightValue) ||
+                                                      (e.Value1 == selectedRightValue && e.Value2 == selectedLeftValue));
+
+        leftEntriesRemoved.Add(selectedLeftValue);
+        rightEntriesRemoved.Add(selectedRightValue);
+
+        if (checkIfAnswerIsCorrect)
+        {
+            // Correct answer logic
+            soundPlayer.Play("audio/correct.mp3");
+            OnUpdateEntry.InvokeAsync(new EntryData
+            {
+                Value1 = selectedLeftValue,
+                Value2 = selectedRightValue,
+                LevelOfKnowledge = currentEntry.LevelOfKnowledge + 1,
+                LastReviewed = DateTime.Now
+            });
+        }
+        else
+        {
+            // Incorrect answer logic
+            soundPlayer.Play("audio/wrong.mp3");
+            OnUpdateEntry.InvokeAsync(new EntryData
+            {
+                Value1 = currentEntry.Value1,
+                Value2 = currentEntry.Value2,
+                LevelOfKnowledge = Math.Max(currentEntry.LevelOfKnowledge - 1, 0),
+                LastReviewed = DateTime.Now
+            });
+
+        }
+        selectedLeftValue = null;
+        selectedRightValue = null;
+        StateHasChanged();
+
+        if (leftEntriesRemoved.Count == questions.ElementAt(currentQuestionIndex).LeftValues.Count())
+        {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.Count)
+            {
+                CloseModal();
+            }
+            else
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        Show = false;
+        StateHasChanged();
+        if (OnClose.HasDelegate)
+        {
+            OnClose.InvokeAsync();
+        }
+    }
+}
