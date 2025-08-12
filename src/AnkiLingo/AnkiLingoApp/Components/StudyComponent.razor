@@ -6,56 +6,86 @@
 {
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
-            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>
-            <small class="text-muted">Correct Answers: @correctAnswersCount, Incorrect Answers: @incorrectAnswersCount</small>
+            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>         
             <hr />
             @{
-                Question entry = questions.ElementAt(currentQuestionIndex);               
-                switch (entry.QuestionType)
+                if (showSummary)
                 {
-                    case QuestionType.MultipleChoiceValue1:
-                    case QuestionType.MultipleChoiceValue2:
-                        <div class="multiple-choice">
-                            <h3 class="text-center">@entry.QuestionText</h3>
-                            <br />
-                            <div class="multiple-choice-questions">
-                                @foreach (var answerOption in entry.Options)
-                                {
-                                    <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption)">@answerOption</button>
-                                }
-                            </div>
-                        </div>
-                        break;
-                    case QuestionType.InputValue1:
-                    case QuestionType.InputValue2:
-                        <div class="input-question">
-                            <h3 class="text-center">@entry.QuestionText</h3>
-                            <br />
-                            <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
-                            <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer)">Submit Answer</button>
-                        </div>
-                        break;
-                    case QuestionType.ListModelValue1:
-                    case QuestionType.ListModelValue2:
-                        <div class="list-mode">
-                            <div class="row">
-                                <div class="col">
-                                    @foreach (var leftValue in entry.LeftValues)
+                    <h3 class="text-center">Congratulations! You have completed the lesson.</h3>
+                  
+                    <p class="text-center">Your performance:                        
+                        @if (questions.Count > 0)
+                        {
+                            var percentage = (double)correctAnswersCount / (correctAnswersCount + incorrectAnswersCount) * 100;
+                            <span class="text-success">@percentage.ToString("0")%</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger">No questions answered.</span>
+                        }
+                    </p>
+
+                    <p class="text-center">Time take: 
+                        @if (endTime < startTime)
+                        {
+                            <span class="text-danger">Error calculating time.</span>
+                        }
+                        else
+                        {
+                            var duration = endTime - startTime;
+                            <span>@duration.Hours.ToString("00"):@duration.Minutes.ToString("00"):@duration.Seconds.ToString("00")</span>
+                        }
+                    </p>
+                }
+                else
+                {
+                    Question entry = questions.ElementAt(currentQuestionIndex);
+                    switch (entry.QuestionType)
+                    {
+                        case QuestionType.MultipleChoiceValue1:
+                        case QuestionType.MultipleChoiceValue2:
+                            <div class="multiple-choice">
+                                <h3 class="text-center">@entry.QuestionText</h3>
+                                <br />
+                                <div class="multiple-choice-questions">
+                                    @foreach (var answerOption in entry.Options)
                                     {
-                                        if (leftEntriesRemoved.Contains(leftValue)) continue; // Skip removed entries
-                                                                                              <button class="btn btn-@((selectedLeftValue == leftValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectLeft(leftValue)">@leftValue</button>
+                                        <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption)">@answerOption</button>
                                     }
                                 </div>
-                                <div class="col">
-                                    @foreach (var rightValue in entry.RightValues)
-                                    {
-                                        if (rightEntriesRemoved.Contains(rightValue)) continue; // Skip removed entries
-                                                                                                <button class="btn btn-@((selectedRightValue == rightValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectRight(rightValue)"> @rightValue</button>
-                                    }
+                            </div>
+                            break;
+                        case QuestionType.InputValue1:
+                        case QuestionType.InputValue2:
+                            <div class="input-question">
+                                <h3 class="text-center">@entry.QuestionText</h3>
+                                <br />
+                                <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
+                                <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer)">Submit Answer</button>
+                            </div>
+                            break;
+                        case QuestionType.ListModelValue1:
+                        case QuestionType.ListModelValue2:
+                            <div class="list-mode">
+                                <div class="row">
+                                    <div class="col">
+                                        @foreach (var leftValue in entry.LeftValues)
+                                        {
+                                            if (leftEntriesRemoved.Contains(leftValue)) continue; // Skip removed entries
+                                                                                                  <button class="btn btn-@((selectedLeftValue == leftValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectLeft(leftValue)">@leftValue</button>
+                                        }
+                                    </div>
+                                    <div class="col">
+                                        @foreach (var rightValue in entry.RightValues)
+                                        {
+                                            if (rightEntriesRemoved.Contains(rightValue)) continue; // Skip removed entries
+                                                                                                    <button class="btn btn-@((selectedRightValue == rightValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectRight(rightValue)"> @rightValue</button>
+                                        }
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        break;
+                            break;
+                    }
                 }
             }
             <hr />
@@ -79,6 +109,9 @@
     private string selectedLeftValue;
     private string selectedRightValue;
     private bool started = false;
+    private TimeOnly startTime = TimeOnly.FromDateTime(DateTime.Now);
+    private TimeOnly endTime = TimeOnly.FromDateTime(DateTime.Now);
+    private bool showSummary = false;
 
     private List<string> leftEntriesRemoved = new List<string>();
     private List<string> rightEntriesRemoved = new List<string>();
@@ -174,12 +207,35 @@
         }
 
         started = true;
+        startTime = TimeOnly.FromDateTime(DateTime.Now);
     }
 
+    /// <summary>
+    /// Get a random question type from the QuestionType enum but have the first 4 question types be more likely to be selected.
+    /// </summary>
+    /// <returns></returns>
     private QuestionType GetRandomQuestionTypeFromEnum()
     {
-        var values = Enum.GetValues(typeof(QuestionType));
-        return (QuestionType)values.GetValue(new Random().Next(values.Length));
+        var questionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList();
+        var weightedTypes = new List<QuestionType>();
+        // Add the first 4 question types more frequently
+        for (int z = 0; z < 4; z++)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                weightedTypes.Add(questionTypes[i]);
+            }
+        }   
+
+        // Add the rest of the question types once
+        for (int i = 4; i < questionTypes.Count; i++)
+        {
+            weightedTypes.Add(questionTypes[i]);
+        }
+        // Shuffle the list to ensure randomness
+        weightedTypes = weightedTypes.OrderBy(x => Guid.NewGuid()).ToList();
+        // Return a random question type from the shuffled list
+        return weightedTypes[new Random().Next(weightedTypes.Count)];
     }
 
     private void CheckAnswer(string selectedAnswer)
@@ -211,15 +267,15 @@
             });
             incorrectAnswersCount++;
         }
+
         currentQuestionIndex++;
         if (currentQuestionIndex >= questions.Count)
         {
-            CloseModal();
+            endTime = TimeOnly.FromDateTime(DateTime.Now);
+            showSummary = true;
         }
-        else
-        {
-            StateHasChanged();
-        }
+
+        StateHasChanged();
     }
 
     private void SelectLeft(string leftValue)
@@ -253,11 +309,12 @@
         if (checkIfAnswerIsCorrect)
         {
             // Correct answer logic
+            correctAnswersCount++;
             soundPlayer.Play("audio/correct.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
-                Value1 = selectedLeftValue,
-                Value2 = selectedRightValue,
+                Value1 = currentEntry.Value1,
+                Value2 = currentEntry.Value2,
                 LevelOfKnowledge = currentEntry.LevelOfKnowledge + 1,
                 LastReviewed = DateTime.Now
             });
@@ -265,6 +322,7 @@
         else
         {
             // Incorrect answer logic
+            incorrectAnswersCount++;
             soundPlayer.Play("audio/wrong.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
@@ -279,17 +337,19 @@
         selectedRightValue = null;
         StateHasChanged();
 
-        if (leftEntriesRemoved.Count == questions.ElementAt(currentQuestionIndex).LeftValues.Count())
+        if (leftEntriesRemoved.Count >= questions.ElementAt(currentQuestionIndex).LeftValues.Count())
         {
             currentQuestionIndex++;
+            leftEntriesRemoved.Clear();
+            rightEntriesRemoved.Clear();
+
             if (currentQuestionIndex >= questions.Count)
             {
-                CloseModal();
+                endTime = TimeOnly.FromDateTime(DateTime.Now);
+                showSummary = true;
             }
-            else
-            {
-                StateHasChanged();
-            }
+
+            StateHasChanged();
         }
     }
 

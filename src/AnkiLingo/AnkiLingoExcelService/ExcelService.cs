@@ -225,59 +225,20 @@ namespace AnkiLingoExcelService
                 if (worksheet.Cell($"A{row}").GetValue<string>() == unitName &&
                     worksheet.Cell($"B{row}").GetValue<string>() == value1 &&
                     worksheet.Cell($"C{row}").GetValue<string>() == value2)
-                {
-                    worksheet.Cell($"D{row}").Value = levelOfKnowlege;
-                    worksheet.Cell($"E{row}").Value = DateTime.Now; // Update Last Reviewed to now
-
+                {               
                     var reviewCountCell = worksheet.Cell($"F{row}");
                     var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
-                    /*
-                        Day 1: Initial learning
-                        Day 2: First review
-                        Day 4: Second review
-                        Day 8: Third review
-                        Day 15: Fourth review
-                        Day 30: Fifth review
-                    */
-                    var newReviewCount = 1;
-                    if (lastReviewed.Date == DateTime.MinValue.Date)
+                    var oldLevelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
+
+                    if (oldLevelOfKnowledge < levelOfKnowlege)
                     {
-                        newReviewCount = 1; // Initial learning
-                    }
-                    else
-                    {
-                        var daysSinceLastReview = (DateTime.Now - lastReviewed).TotalDays;
-                        if (daysSinceLastReview < 1)
-                        {
-                            newReviewCount = 1; // Initial learning
-                        }
-                        else if (daysSinceLastReview < 2)
-                        {
-                            newReviewCount = 2; // First review
-                        }
-                        else if (daysSinceLastReview < 4)
-                        {
-                            newReviewCount = 3; // Second review
-                        }
-                        else if (daysSinceLastReview < 8)
-                        {
-                            newReviewCount = 4; // Third review
-                        }
-                        else if (daysSinceLastReview < 15)
-                        {
-                            newReviewCount = 5; // Fourth review
-                        }
-                        else if (daysSinceLastReview < 30)
-                        {
-                            newReviewCount = 6; // Fifth review
-                        }
-                        else
-                        {
-                            newReviewCount = 7; // More than a month since last review
-                        }
+                        // Increment review count if the level of knowledge has increased
+                        int newReviewCount = reviewCountCell.GetValue<int>() + 1;
+                        reviewCountCell.Value = newReviewCount;
                     }
 
-                    worksheet.Cell($"F{row}").Value = newReviewCount;
+                    worksheet.Cell($"D{row}").Value = levelOfKnowlege;
+                    worksheet.Cell($"E{row}").Value = DateTime.Now; // Update Last Reviewed to now
 
                     workbook.Save();
                     return true;
