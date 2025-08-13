@@ -13,6 +13,8 @@
                 {
                     <h3 class="text-center">Congratulations! You have completed the lesson.</h3>
                   
+                    <p class="text-center">XP: @xp</p>
+
                     <p class="text-center">Your performance:                        
                         @if (questions.Count > 0)
                         {
@@ -112,6 +114,7 @@
     private TimeOnly startTime = TimeOnly.FromDateTime(DateTime.Now);
     private TimeOnly endTime = TimeOnly.FromDateTime(DateTime.Now);
     private bool showSummary = false;
+    private int xp = 0;
 
     private List<string> leftEntriesRemoved = new List<string>();
     private List<string> rightEntriesRemoved = new List<string>();
@@ -253,6 +256,7 @@
                 LastReviewed = DateTime.Now
             });
             correctAnswersCount++;
+            xp += 2;
         }
         else
         {
@@ -266,6 +270,7 @@
                 LastReviewed = DateTime.Now
             });
             incorrectAnswersCount++;
+            xp -= 2;
         }
 
         currentQuestionIndex++;
@@ -310,6 +315,7 @@
         {
             // Correct answer logic
             correctAnswersCount++;
+            xp += 2;
             soundPlayer.Play("audio/correct.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
@@ -323,6 +329,7 @@
         {
             // Incorrect answer logic
             incorrectAnswersCount++;
+            xp -= 2;
             soundPlayer.Play("audio/wrong.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
