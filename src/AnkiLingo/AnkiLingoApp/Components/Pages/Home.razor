@@ -5,7 +5,12 @@
 
 <PageTitle>AnkiLingo</PageTitle>
 
-<TopNavigation />
+<TopNavigation currentCourse="currentCourse"
+               courseList="courseList"
+               gemsCount="userData.GemsCount"
+               streakCount="userData.StreakLength"
+               OnCourseChanged="LoadCourseContent"
+               lastStudyDatetime="userData.LastStudy" />
 
 <div class="d-flex flex-row gap-3">
     <SiteNavigation />
@@ -93,7 +98,8 @@
 <StudyComponent Entries="currentLesson"
                 Show="showStudyModal"
                 OnClose="() => showStudyModal = false"
-                OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)" />
+                OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
+                CurrentCourse="currentCourse" />
 
 @code {
     private List<string> courseList = new List<string>();
@@ -105,27 +111,23 @@
     private bool showCurrentLessonModal = false;
     private bool showStudyModal = false;
 
-    // List of 20 different background colours for units in the format of hex codes
     private List<string> BackgroundColours = new List<string>()
     {
         "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
         "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
     };
 
+    private UserData userData;
+
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var filePath = @"C:\temp\AnkiLingo";
-            courseList = ExcelService.GetCourseNames(filePath);
-            var currentCoursePath = $"{filePath}\\{courseList.FirstOrDefault()}.xlsx";
-            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+            var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
+            userData = ExcelService.GetUserData(userDataFilePath);
+            courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
 
-            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
-            {
-                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
-            }
-        ;
+            LoadCourseContent(userData.CurrentCourse);
         }
         catch (Exception ex)
         {
@@ -135,10 +137,35 @@
         }
     }
 
+    protected void LoadCourseContent(string courseName)
+    {
+        try
+        {            
+            var filePath = @"C:\temp\AnkiLingo";
+            var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
+            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+
+            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
+            {
+                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
+            }
+
+            userData.CurrentCourse = courseName;
+            ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error loading course content: {ex.Message}");
+            errorMessage = "Failed to load course content. Please check the console for details.";
+        }
+    }
+
     protected void UpdateEntry(string value1, string value2, int levelOfKnowledge)
     {
-        if (levelOfKnowledge > 10) return;
-        if (levelOfKnowledge < 0) return;
+        if (levelOfKnowledge > 10) levelOfKnowledge = 10;
+        if (levelOfKnowledge < 0) levelOfKnowledge = 0;
 
         var filePath = @"C:\temp\AnkiLingo";
         var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
@@ -163,10 +190,10 @@
                        !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
 
             /*
-              Initial Review: Ideally, you should review the material within 24 hours of first learning it. 
-                              This helps solidify the information in your short-term memory. 
+              Initial Review: Ideally, you should review the material within 24 hours of first learning it.
+                              This helps solidify the information in your short-term memory.
               Subsequent Reviews: The intervals between subsequent reviews should gradually increase. A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on. However, you can adjust this based on how well you remember the material. If you're struggling, you can shorten the intervals. If you're easily remembering, you can lengthen them.
-              
+
                 Here's a sample spaced repetition schedule:
                 Day 1: Initial learning
                 Day 2: First review
@@ -175,7 +202,7 @@
                 Day 15: Fourth review
                 Day 30: Fifth review
              */
-           
+
             // get entries that where reviewed 1 time and last reviewed more than 1 day ago
             entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
             // get entries that where reviewed 2 times and last reviewed more than 3 days ago
@@ -186,9 +213,11 @@
             entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
             // get entries that where reviewed 5 times and last reviewed more than 30 days ago
             entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
-            
 
-            entries.AddRange(entriesToAdd);
+            // oldest entries first
+            entriesToAdd = entriesToAdd.OrderBy(x => x.LastReviewed).ToList();
+
+            entries.AddRange(entriesToAdd.Take(10));
             showStudyModal = true;
         }
         else
@@ -199,8 +228,7 @@
         StateHasChanged();
     }
 
-    protected int GetPercentageOfKnowledge(List<EntryData>
-    entries)
+    protected int GetPercentageOfKnowledge(List<EntryData> entries)
     {
         if (entries == null || !entries.Any())
         {
@@ -211,8 +239,7 @@
         return (int)((double)sumOfKnowledge / maxPossibleKnowledge * 100);
     }
 
-    protected int GetSumOfKnowledge(List<EntryData>
-        entries)
+    protected int GetSumOfKnowledge(List<EntryData> entries)
     {
         if (entries == null || !entries.Any())
         {
@@ -221,8 +248,7 @@
         return entries.Sum(e => e.LevelOfKnowledge);
     }
 
-    protected int GetMaxPossibleKnoledge(List<EntryData>
-        entries)
+    protected int GetMaxPossibleKnoledge(List<EntryData> entries)
     {
         return entries.Count() * 10;
     }

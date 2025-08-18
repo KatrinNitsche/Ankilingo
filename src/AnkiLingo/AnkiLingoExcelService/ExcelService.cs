@@ -121,21 +121,19 @@ namespace AnkiLingoExcelService
             // the following rows contain the entries for the units A1 - unit name, B1 - value 1, B1 - value 2            
             while (!worksheet.Cell($"A{row}").IsEmpty())
             {
+                var value1 = worksheet.Cell($"B{row}").GetValue<string>();
+                var value2 = worksheet.Cell($"C{row}").GetValue<string>();
+                var levelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
+                var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
+                var reviewCount = worksheet.Cell($"F{row}").GetValue<int>();
+
                 var entry = new EntryData
                 {
-                    Value1 = worksheet.Cell($"B{row}").GetValue<string>(),
-                    Value2 = worksheet.Cell($"C{row}").GetValue<string>(),
-
-                    // D<row> can be empty but than should be set to 0
-                    LevelOfKnowledge = worksheet.Cell($"D{row}").IsEmpty()
-                                       ? 0
-                                       : worksheet.Cell($"D{row}").GetValue<int>(),
-
-                    // E<row> can be empty but than should be set to min date
-                    LastReviewed = worksheet.Cell($"E{row}").IsEmpty()
-                                   ? DateTime.MinValue
-                                   : worksheet.Cell($"E{row}").GetValue<DateTime>(),
-                    ReviewCount = worksheet.Cell($"F{row}").GetValue<int>()
+                    LastReviewed = lastReviewed,
+                    LevelOfKnowledge = levelOfKnowledge,
+                    ReviewCount = reviewCount,
+                    Value1 = value1,
+                    Value2 = value2
                 };
 
                 // Find the unit for this entry
@@ -225,7 +223,7 @@ namespace AnkiLingoExcelService
                 if (worksheet.Cell($"A{row}").GetValue<string>() == unitName &&
                     worksheet.Cell($"B{row}").GetValue<string>() == value1 &&
                     worksheet.Cell($"C{row}").GetValue<string>() == value2)
-                {               
+                {
                     var reviewCountCell = worksheet.Cell($"F{row}");
                     var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
                     var oldLevelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
@@ -247,6 +245,68 @@ namespace AnkiLingoExcelService
             }
             Console.WriteLine("Entry not found.");
             return false;
+        }
+
+
+        /// <summary>
+        /// Read user data from the first worksheet of the given Excel file
+        /// </summary>
+        /// <param name="filePath">excel file</param>
+        /// <returns>user information</returns>
+        public static UserData GetUserData(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return new UserData();
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1); // 1-based index for the first worksheet
+            var userData = new UserData
+            {
+                StreakLength = worksheet.Cell("B4").GetValue<int>(),
+                GemsCount = worksheet.Cell("B2").GetValue<int>(),
+                CurrentCourse = worksheet.Cell("B1").GetValue<string>(),
+                LastStudy = worksheet.Cell("B5").GetValue<DateTime>()
+            };
+            return userData;
+        }
+
+        public static void UpdateUserData(string filePath, UserData userData, int? XP = null, TimeOnly? duration = null)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return;
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet(1); 
+
+            if (userData != null)
+            {
+                worksheet.Cell("B4").Value = userData.StreakLength;
+                worksheet.Cell("B2").Value = userData.GemsCount;
+                worksheet.Cell("B1").Value = userData.CurrentCourse;
+                workbook.Save();
+            }
+
+            if (XP.HasValue)
+            {
+                // update gems count based on XP
+                var oldGemsCount = worksheet.Cell("B2").GetValue<int>();
+                worksheet.Cell("B2").Value = oldGemsCount + (XP.Value / 10); // Assuming 10 XP = 1 gem
+
+                // Update the XP value in cell B3
+                var oldXPValue = worksheet.Cell("B3").GetValue<int>();
+                worksheet.Cell("B3").Value = oldXPValue + XP.Value; 
+                workbook.Save();
+            }
+
+            if (duration.HasValue)
+            {
+                worksheet.Cell("B5").Value = DateTime.Now; 
+                workbook.Save();
+            }
         }
     }
 }

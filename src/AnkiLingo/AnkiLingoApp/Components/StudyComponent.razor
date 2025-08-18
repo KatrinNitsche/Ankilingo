@@ -1,21 +1,23 @@
 ﻿@using AnkiLingoApp.Helpers
 @using AnkiLingoApp.Models
+@using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
 
 @if (Show)
 {
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
-            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>         
+            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>
             <hr />
             @{
                 if (showSummary)
                 {
                     <h3 class="text-center">Congratulations! You have completed the lesson.</h3>
-                  
+
                     <p class="text-center">XP: @xp</p>
 
-                    <p class="text-center">Your performance:                        
+                    <p class="text-center">
+                        Your performance:
                         @if (questions.Count > 0)
                         {
                             var percentage = (double)correctAnswersCount / (correctAnswersCount + incorrectAnswersCount) * 100;
@@ -27,7 +29,8 @@
                         }
                     </p>
 
-                    <p class="text-center">Time take: 
+                    <p class="text-center">
+                        Time take:
                         @if (endTime < startTime)
                         {
                             <span class="text-danger">Error calculating time.</span>
@@ -103,6 +106,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<EntryData> OnUpdateEntry { get; set; }
     [Inject] private ISoundPlayer soundPlayer { get; set; }
+    [Parameter] public CourseData CurrentCourse { get; set; }
 
     private List<Question> questions = new List<Question>();
     private int currentQuestionIndex = 0;
@@ -228,7 +232,7 @@
             {
                 weightedTypes.Add(questionTypes[i]);
             }
-        }   
+        }
 
         // Add the rest of the question types once
         for (int i = 4; i < questionTypes.Count; i++)
@@ -276,8 +280,7 @@
         currentQuestionIndex++;
         if (currentQuestionIndex >= questions.Count)
         {
-            endTime = TimeOnly.FromDateTime(DateTime.Now);
-            showSummary = true;
+            FinishLesson();
         }
 
         StateHasChanged();
@@ -346,18 +349,34 @@
 
         if (leftEntriesRemoved.Count >= questions.ElementAt(currentQuestionIndex).LeftValues.Count())
         {
-            currentQuestionIndex++;
-            leftEntriesRemoved.Clear();
-            rightEntriesRemoved.Clear();
-
             if (currentQuestionIndex >= questions.Count)
             {
-                endTime = TimeOnly.FromDateTime(DateTime.Now);
-                showSummary = true;
+                FinishLesson();
             }
-
-            StateHasChanged();
+            else
+            {
+                currentQuestionIndex++;
+            }
         }
+    }
+
+    private void FinishLesson()
+    {
+        currentQuestionIndex++;
+        leftEntriesRemoved.Clear();
+        rightEntriesRemoved.Clear();
+
+        endTime = TimeOnly.FromDateTime(DateTime.Now);
+        showSummary = true;
+
+        var duration = endTime - startTime;
+        var timeOnly = new TimeOnly(duration.Hours, duration.Minutes, duration.Seconds);
+
+        // update user data
+        var filePaht = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
+        ExcelService.UpdateUserData(filePaht, null, xp, timeOnly);
+
+        StateHasChanged();
     }
 
     private void CloseModal()

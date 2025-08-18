@@ -242,6 +242,40 @@ h1:focus {
     filter: brightness(0.95);
 }
 
+.course-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.course-list-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem;
+    border-radius: 16px;
+    text-decoration: none;
+    background-color: #FFCDD2;
+    color: #7c7c7c;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: background 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+}
+    .course-list-entry:hover {
+        border: 1px solid #FFCDD2;
+        color: #FFCDD2;
+        background-color: white;
+    }
+
+.close-button {
+    background-color: var(--question-colour) !important;
+    border-radius: 10px;
+    color: white !important;
+    width: 25%;
+}
+
 /* site navigation */
 #side-navigation-container {
     position: fixed;
