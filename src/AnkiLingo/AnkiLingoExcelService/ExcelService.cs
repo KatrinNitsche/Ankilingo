@@ -290,10 +290,27 @@ namespace AnkiLingoExcelService
                 worksheet.Cell("B2").Value = userData.GemsCount;
                 worksheet.Cell("B1").Value = userData.CurrentCourse;
                 workbook.Save();
+                return; // If userData is provided, we update it and exit
             }
 
             if (XP.HasValue)
             {
+                // Increase the current streak by 1 if the last study was longer than 24 hourse ago 
+                var lastStudyCell = worksheet.Cell("B5");
+                if (lastStudyCell.GetValue<DateTime>().Date < DateTime.Now.Date)
+                {
+                    var oldStreakLength = worksheet.Cell("B4").GetValue<int>();
+                    worksheet.Cell("B4").Value = oldStreakLength + 1; // Increment streak length
+                } 
+                else
+                {
+                    // Reset streak length if the last study was longer than 48 hours ago
+                    if ((DateTime.Now - lastStudyCell.GetValue<DateTime>()).TotalHours > 48)
+                    {
+                        worksheet.Cell("B4").Value = 0; // Reset streak length
+                    }
+                }
+
                 // update gems count based on XP
                 var oldGemsCount = worksheet.Cell("B2").GetValue<int>();
                 worksheet.Cell("B2").Value = oldGemsCount + (XP.Value / 10); // Assuming 10 XP = 1 gem
@@ -309,6 +326,33 @@ namespace AnkiLingoExcelService
                 worksheet.Cell("B5").Value = DateTime.Now;
                 workbook.Save();
             }
+
+            // Starting from Row 9 is a list of study sessions with the following columns:
+            // A - Date, B - XP earned, C - Duration
+            // a new row should be added for a study session if there wasn't one added for today
+            int row = 9;
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                if (worksheet.Cell($"A{row}").GetValue<DateTime>().Date == DateTime.Now.Date)
+                {
+                    // A row for today already exists, so we can exit
+                    return;
+                }
+                row++;
+            }
+
+            // If we reach here, it means no row for today exists, so we add a new one
+            worksheet.Cell($"A{row}").Value = DateTime.Now.Date;
+            if (XP.HasValue)
+            {
+                worksheet.Cell($"B{row}").Value = XP.Value;
+            }
+            if (duration.HasValue)
+            {
+                worksheet.Cell($"C{row}").Value = duration.Value.ToString();
+            }
+
+            workbook.Save();
         }
     }
 }
