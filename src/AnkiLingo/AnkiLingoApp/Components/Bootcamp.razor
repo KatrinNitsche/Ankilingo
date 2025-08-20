@@ -1,0 +1,108 @@
+﻿@page "/bootcamp"
+@using AnkiLingoExcelService
+@using AnkiLingoExcelService.Data
+<ul>
+    @foreach (var entry in Entries)
+    {
+        <li>
+            @switch (entry.LevelOfKnowledge)
+            {
+                case 0:
+                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                    break;
+                case 1:
+                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                    break;
+                case 2:
+                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                    break;
+                case 3:
+                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                    break;
+                case 4:
+                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                    break;
+                case 5:
+                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                    break;
+                case 6:
+                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                    break;
+                case 7:
+                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                    break;
+                case 8:
+                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                    break;
+                default:
+                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                    break;
+            }
+
+            <strong>@entry.Value1</strong> - @entry.Value2
+            <br /> Last Reviewed:
+            @if (entry.LastReviewed.Year < 1900)
+            {
+                <small>never</small>
+            }
+            else
+            {
+                <small>@entry.LastReviewed.ToShortDateString()</small>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    private List<EntryData> Entries { get; set; } = new List<EntryData>();
+    private string errorMessage;
+    private UserData userData;
+    private CourseData currentCourse;
+    private List<string> BackgroundColours = new List<string>()
+    {
+        "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
+        "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
+            userData = ExcelService.GetUserData(userDataFilePath);
+
+            LoadCourseContent(userData.CurrentCourse);
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error fetching course list: {ex.Message}");
+            errorMessage = "Failed to load course list. Please check the console for details.";
+        }
+    }
+
+    protected void LoadCourseContent(string courseName)
+    {
+        try
+        {
+            var filePath = @"C:\temp\AnkiLingo";
+            var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
+            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+
+            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
+            {
+                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
+            }
+
+            userData.CurrentCourse = courseName;
+            ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error loading course content: {ex.Message}");
+            errorMessage = "Failed to load course content. Please check the console for details.";
+        }
+    }
+}
