@@ -8,6 +8,14 @@
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
             <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>
+
+            @if (revealAnswer)
+            {
+                <div class="alert alert-info">
+                    <strong>Answer:</strong> @textToReveal
+                </div>
+            }
+
             <hr />
             @{
                 if (showSummary)
@@ -55,7 +63,7 @@
                                 <div class="multiple-choice-questions">
                                     @foreach (var answerOption in entry.Options)
                                     {
-                                        <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption)">@answerOption</button>
+                                        <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption, true)">@answerOption</button>
                                     }
                                 </div>
                             </div>
@@ -66,7 +74,7 @@
                                 <h3 class="text-center">@entry.QuestionText</h3>
                                 <br />
                                 <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
-                                <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer)">Submit Answer</button>
+                                <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer, false)">Submit Answer</button>
                             </div>
                             break;
                         case QuestionType.ListModelValue1:
@@ -119,6 +127,8 @@
     private TimeOnly endTime = TimeOnly.FromDateTime(DateTime.Now);
     private bool showSummary = false;
     private int xp = 0;
+    private bool revealAnswer = false;
+    private string textToReveal = string.Empty;
 
     private List<string> leftEntriesRemoved = new List<string>();
     private List<string> rightEntriesRemoved = new List<string>();
@@ -245,10 +255,11 @@
         return weightedTypes[new Random().Next(weightedTypes.Count)];
     }
 
-    private void CheckAnswer(string selectedAnswer)
+    private void CheckAnswer(string selectedAnswer, bool compareComplete)
     {
         var currentQuestion = questions[currentQuestionIndex];
-        if (currentQuestion.Options.Contains(selectedAnswer) || currentQuestion.AnswerText.ToLower().Contains(selectedAnswer.ToLower()))
+        if ((!compareComplete && (currentQuestion.Options.Contains(selectedAnswer) || currentQuestion.AnswerText.ToLower().Contains(selectedAnswer.ToLower()))) ||
+            (compareComplete && currentQuestion.AnswerText.Equals(selectedAnswer)))
         {
             // Correct answer logic
             soundPlayer.Play("audio/correct.mp3");
@@ -266,6 +277,7 @@
         {
             // Incorrect answer logic
             soundPlayer.Play("audio/wrong.mp3");
+            RevealAnswerForXSeceonds(3, currentQuestion.AnswerText); // Reveal the answer for 3 seconds            
             OnUpdateEntry.InvokeAsync(new EntryData
             {
                 Value1 = currentQuestion.Value1,
@@ -274,7 +286,7 @@
                 LastReviewed = DateTime.Now
             });
             incorrectAnswersCount++;
-            xp -= 2;
+            xp -= 2;            
         }
 
         currentQuestionIndex++;
@@ -358,6 +370,16 @@
                 currentQuestionIndex++;
             }
         }
+    }
+
+    private async Task RevealAnswerForXSeceonds(int seconds, string text)
+    {
+        revealAnswer = true;
+        textToReveal = text;
+        StateHasChanged();
+        await Task.Delay(seconds * 1000);
+        revealAnswer = false;
+        StateHasChanged();
     }
 
     private void FinishLesson()

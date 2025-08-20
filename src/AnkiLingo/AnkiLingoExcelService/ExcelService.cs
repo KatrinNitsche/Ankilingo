@@ -173,17 +173,19 @@ namespace AnkiLingoExcelService
                     continue;
                 }
 
+                var Value1 = worksheet.Cell($"B{row}").GetValue<string>();
+                var Value2 = worksheet.Cell($"C{row}").GetValue<string>();
+                var LevelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
+                var LastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
+                var ReviewCount = worksheet.Cell($"F{row}").GetValue<int>();
+
                 var entry = new EntryData
                 {
-                    Value1 = worksheet.Cell($"B{row}").GetValue<string>(),
-                    Value2 = worksheet.Cell($"C{row}").GetValue<string>(),
-                    LevelOfKnowledge = worksheet.Cell($"D{row}").IsEmpty()
-                                      ? 0
-                                      : worksheet.Cell($"D{row}").GetValue<int>(),
-                    LastReviewed = worksheet.Cell($"E{row}").IsEmpty()
-                                   ? DateTime.MinValue
-                                   : worksheet.Cell($"E{row}").GetValue<DateTime>(),
-                    ReviewCount = worksheet.Cell($"F{row}").GetValue<int>()
+                    Value1 = Value1,
+                    Value2 = Value2,
+                    LevelOfKnowledge = LevelOfKnowledge,
+                    LastReviewed = LastReviewed,
+                    ReviewCount = ReviewCount
                 };
 
                 entries.Add(entry);
@@ -280,7 +282,7 @@ namespace AnkiLingoExcelService
                 return;
             }
             using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet(1); 
+            var worksheet = workbook.Worksheet(1);
 
             if (userData != null)
             {
@@ -298,13 +300,13 @@ namespace AnkiLingoExcelService
 
                 // Update the XP value in cell B3
                 var oldXPValue = worksheet.Cell("B3").GetValue<int>();
-                worksheet.Cell("B3").Value = oldXPValue + XP.Value; 
+                worksheet.Cell("B3").Value = oldXPValue + XP.Value;
                 workbook.Save();
             }
 
             if (duration.HasValue)
             {
-                worksheet.Cell("B5").Value = DateTime.Now; 
+                worksheet.Cell("B5").Value = DateTime.Now;
                 workbook.Save();
             }
         }
