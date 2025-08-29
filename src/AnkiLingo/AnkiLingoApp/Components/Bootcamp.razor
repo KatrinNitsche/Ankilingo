@@ -1,68 +1,139 @@
 ﻿@page "/bootcamp"
+@rendermode InteractiveServer
 @using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
-<ul>
-    @foreach (var entry in Entries)
-    {
-        <li>
-            @switch (entry.LevelOfKnowledge)
-            {
-                case 0:
-                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
-                    break;
-                case 1:
-                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
-                    break;
-                case 2:
-                    <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
-                    break;
-                case 3:
-                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
-                    break;
-                case 4:
-                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
-                    break;
-                case 5:
-                    <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
-                    break;
-                case 6:
-                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
-                    break;
-                case 7:
-                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
-                    break;
-                case 8:
-                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
-                    break;
-                default:
-                    <span class="badge bg-success">@entry.LevelOfKnowledge</span>
-                    break;
-            }
 
-            <strong>@entry.Value1</strong> - @entry.Value2
-            <br /> Last Reviewed:
-            @if (entry.LastReviewed.Year < 1900)
+<PageTitle>AnkiLingo</PageTitle>
+
+<TopNavigation currentCourse="currentCourse"
+               courseList="courseList"
+               gemsCount="userData.GemsCount"
+               streakCount="userData.StreakLength"
+               OnCourseChanged="LoadCourseContent"
+               lastStudyDatetime="userData.LastStudy" />
+
+<div class="d-flex flex-row gap-3">
+    <SiteNavigation />
+
+    <div id="course-content" class="w-75" style="padding-left: 20rem;">
+
+        <div class="d-flex flex-row mb-3 gap-3">
+            <div class="form-group">
+                <label for="sectionSelect">Select Section:</label>
+
+                <select id="sectionSelect" class="form-select" @bind="selectedSection">
+                    @if (currentCourse != null)
+                    {
+                        <option value="">-- Select Section --</option>
+                        foreach (var sectionData in currentCourse.Sections)
+                        {
+                            <option value="@sectionData.Name">@sectionData.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="unitSelect">Select Unit:</label>
+                <select id="unitSelect" class="form-select" @bind="selectedUnit">
+                    @if (currentCourse != null)
+                    {
+                        <option value="">-- Select Unit --</option>
+                        foreach (var section in currentCourse.Sections.Where(x => !string.IsNullOrEmpty(selectedSection) && x.Name == selectedSection))
+                        {
+                            foreach (var unit in section.Units)
+                            {
+                                <option value="@unit.Name">@unit.Name</option>
+                            }
+                        }
+                    }
+                </select>
+
+            </div>
+
+            <button class="btn btn-primary mt-4" @onclick="FilterContent">Filter</button>
+            @if (!string.IsNullOrEmpty(selectedSection) && !string.IsNullOrEmpty(selectedUnit))
             {
-                <small>never</small>
+                <button class="btn btn-secondary mt-4" @onclick="StartStudySession">Study</button>
             }
-            else
+        </div>
+
+        <ul class="d-flex flex-row flex-wrap gap-4">
+            @foreach (var entry in Entries)
             {
-                <small>@entry.LastReviewed.ToShortDateString()</small>
+                <li class="list-group-item w-25 p-3 border rounded-2 shadow">
+                    @switch (entry.LevelOfKnowledge)
+                    {
+                        case 0:
+                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 1:
+                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 2:
+                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 3:
+                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 4:
+                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 5:
+                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 6:
+                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 7:
+                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                            break;
+                        case 8:
+                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                            break;
+                        default:
+                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                            break;
+                    }
+
+                    <strong> @entry.Value1</strong> - @entry.Value2
+                    <br /> Last Reviewed:
+                    @if (entry.LastReviewed.Year < 1900)
+                    {
+                        <small>never</small>
+                    }
+                    else
+                    {
+                        <small>@entry.LastReviewed.ToShortDateString()</small>
+                    }
+                </li>
             }
-        </li>
-    }
-</ul>
+        </ul>
+
+        <StudyComponent Entries="Entries"
+                        Show="showStudyModal"
+                        OnClose="() => showStudyModal = false"
+                        OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
+                        CurrentCourse="currentCourse" />
+    </div>
+</div>
 
 @code {
+    private List<string> courseList = new List<string>();
     private List<EntryData> Entries { get; set; } = new List<EntryData>();
     private string errorMessage;
     private UserData userData;
     private CourseData currentCourse;
+    private string selectedSection { get; set; }
+    private string selectedUnit { get; set; }
     private List<string> BackgroundColours = new List<string>()
     {
-        "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
-        "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
+    "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
+    "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
     };
+    private string selectedCourse { get; set; }
+
+    private bool showStudyModal = false;  
 
     protected override async Task OnInitializedAsync()
     {
@@ -70,7 +141,8 @@
         {
             var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
             userData = ExcelService.GetUserData(userDataFilePath);
-
+            courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
+            selectedCourse = userData.CurrentCourse;
             LoadCourseContent(userData.CurrentCourse);
         }
         catch (Exception ex)
@@ -79,6 +151,12 @@
             Console.WriteLine($"Error fetching course list: {ex.Message}");
             errorMessage = "Failed to load course list. Please check the console for details.";
         }
+    }
+
+    protected void FilterContent()
+    {
+        Entries.Clear();
+        LoadCourseContent(selectedCourse);
     }
 
     protected void LoadCourseContent(string courseName)
@@ -95,6 +173,26 @@
             }
 
             userData.CurrentCourse = courseName;
+
+            // add all entries from all sections and units to Entries
+            foreach (var section in currentCourse.Sections)
+            {
+                if (!string.IsNullOrEmpty(selectedSection) && section.Name != selectedSection)
+                {
+                    continue; // Skip sections that don't match the selected section
+                }
+
+                foreach (var unit in section.Units)
+                {
+                    if (!string.IsNullOrEmpty(selectedUnit) && unit.Name != selectedUnit)
+                    {
+                        continue; // Skip units that don't match the selected unit
+                    }
+
+                    Entries.AddRange(unit.Entries.Where(x => x.LastReviewed.Year > 1901));
+                }
+            }
+
             ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
             StateHasChanged();
         }
@@ -104,5 +202,21 @@
             Console.WriteLine($"Error loading course content: {ex.Message}");
             errorMessage = "Failed to load course content. Please check the console for details.";
         }
+    }
+
+    protected void StartStudySession()
+    {
+        StateHasChanged();
+        showStudyModal = true;
+    }
+
+    protected void UpdateEntry(string value1, string value2, int levelOfKnowledge)
+    {
+        if (levelOfKnowledge > 10) levelOfKnowledge = 10;
+        if (levelOfKnowledge < 0) levelOfKnowledge = 0;
+
+        var filePath = @"C:\temp\AnkiLingo";
+        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
+        ExcelService.UpdateEntry(currentCoursePath, selectedSection, selectedUnit, value1, value2, levelOfKnowledge);
     }
 }

@@ -297,7 +297,8 @@ namespace AnkiLingoExcelService
             {
                 // Increase the current streak by 1 if the last study was longer than 24 hourse ago 
                 var lastStudyCell = worksheet.Cell("B5");
-                if (lastStudyCell.GetValue<DateTime>().Date < DateTime.Now.Date)
+                var lastStudy = lastStudyCell.GetValue<DateTime>();
+                if (lastStudy.Date < DateTime.Now.Date && (DateTime.Now - lastStudy).TotalHours < 48)
                 {
                     var oldStreakLength = worksheet.Cell("B4").GetValue<int>();
                     worksheet.Cell("B4").Value = oldStreakLength + 1; // Increment streak length
@@ -305,9 +306,9 @@ namespace AnkiLingoExcelService
                 else
                 {
                     // Reset streak length if the last study was longer than 48 hours ago
-                    if ((DateTime.Now - lastStudyCell.GetValue<DateTime>()).TotalHours > 48)
+                    if ((DateTime.Now - lastStudy).TotalHours > 48)
                     {
-                        worksheet.Cell("B4").Value = 0; // Reset streak length
+                        worksheet.Cell("B4").Value = 1; // Reset streak length
                     }
                 }
 
