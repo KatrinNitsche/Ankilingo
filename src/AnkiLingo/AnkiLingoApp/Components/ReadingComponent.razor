@@ -66,14 +66,28 @@
                     </li>
                 }
             </ul>
+      
+            <ul>
+                @foreach (ImageData image in Images.Where(x => x.SectionName == SectionName && x.UnitName == UnitName))
+                {
+                    <li>
+                        <img src="images/@(image.ImageName).jpg" alt="Image" style="max-width: 200px; max-height: 200px;" />
+                        <br />
+                        <small>@image.ImageName</small>
+                    </li>
+                }
+            </ul>
             <button class="btn btn-primary w-25" @onclick="CloseModal">Close</button>
-        </div>
+        </div>       
     </div>
 }
 
 @code {
     [Parameter] public string Title { get; set; } = "Reading Lessons Content";
     [Parameter] public List<EntryData> Entries { get; set; } = new List<EntryData>();
+    [Parameter] public List<ImageData> Images { get; set; } = new List<ImageData>();
+    [Parameter] public string SectionName { get; set; } = string.Empty;
+    [Parameter] public string UnitName { get; set; } = string.Empty;
     [Parameter] public bool Show { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 

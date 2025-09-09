@@ -3,7 +3,7 @@
 @using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
 
-@if (Show)
+@if (Show && questions != null && questions.Count() > 0)
 {
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
@@ -98,6 +98,19 @@
                                 </div>
                             </div>
                             break;
+                        case QuestionType.Image:                            
+                            <div class="image-question text-center">                              
+                                <img src="@entry.AnswerText" alt="Image" style="max-width: 800px; max-height: 800px;" />
+                                <br />
+                                <button class="btn btn-primary mt-2" @onclick="() => currentQuestionIndex++">I have reviewed the image</button>
+                            </div>
+
+                            break;
+                        default:
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> Unknown question type.
+                            </div>
+                            break;
                     }
                 }
             }
@@ -110,6 +123,7 @@
 @code {
     [Parameter] public string Title { get; set; } = "Study Lesson";
     [Parameter] public List<EntryData> Entries { get; set; } = new List<EntryData>();
+    [Parameter] public List<ImageData> Images { get; set; } = new List<ImageData>();
     [Parameter] public bool Show { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<EntryData> OnUpdateEntry { get; set; }
@@ -139,10 +153,31 @@
         SetQuestions();
     }
 
-    private void SetQuestions()
+    public void SetQuestions()
     {
         questions.Clear();
         Entries = Entries.OrderBy(e => Guid.NewGuid()).ToList();
+
+        if (Images != null && Images.Count() > 0)
+        {
+            foreach (var img in Images)
+            {
+                questions.Add(new Question
+                {
+                    Value1 = img.ImageName,
+                    Value2 = $"images/{img.ImageName}.jpg",
+                    QuestionText = $"What does this image represent?",
+                    AnswerText = $"images/{img.ImageName}.jpg",
+                    LevelOfKnowledge = 0,
+                    LastReviewed = DateTime.Now,
+                    QuestionType = QuestionType.Image,
+                    Options = new List<string>(),
+                    LeftValues = new List<string>(),
+                    RightValues = new List<string>(),
+                    ImageCovers = img.ImageCovers
+                });
+            }
+        }
 
         foreach (var entry in Entries)
         {
@@ -244,8 +279,8 @@
             }
         }
 
-        // Add the rest of the question types once
-        for (int i = 4; i < questionTypes.Count; i++)
+        // Add the rest of the question types once (leave out the last which is Image)
+        for (int i = 4; i < questionTypes.Count - 1; i++)
         {
             weightedTypes.Add(questionTypes[i]);
         }
@@ -277,7 +312,7 @@
         {
             // Incorrect answer logic
             soundPlayer.Play("audio/wrong.mp3");
-            RevealAnswerForXSeceonds(3, currentQuestion.AnswerText); // Reveal the answer for 3 seconds            
+            RevealAnswerForXSeceonds(3, currentQuestion.AnswerText); // Reveal the answer for 3 seconds
             OnUpdateEntry.InvokeAsync(new EntryData
             {
                 Value1 = currentQuestion.Value1,
@@ -286,7 +321,7 @@
                 LastReviewed = DateTime.Now
             });
             incorrectAnswersCount++;
-            xp -= 2;            
+            xp -= 2;
         }
 
         currentQuestionIndex++;
@@ -326,6 +361,14 @@
         leftEntriesRemoved.Add(selectedLeftValue);
         rightEntriesRemoved.Add(selectedRightValue);
 
+        var Value1Entry = currentEntry.Value1;
+        var Value2Entry = currentEntry.Value2;
+        if (questions.ElementAt(currentQuestionIndex).QuestionType == QuestionType.MultipleChoiceValue2)
+        {
+            Value1Entry = currentEntry.Value2;
+            Value2Entry = currentEntry.Value1;
+        }
+
         if (checkIfAnswerIsCorrect)
         {
             // Correct answer logic
@@ -334,8 +377,8 @@
             soundPlayer.Play("audio/correct.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
-                Value1 = currentEntry.Value1,
-                Value2 = currentEntry.Value2,
+                Value1 = Value1Entry,
+                Value2 = Value2Entry,
                 LevelOfKnowledge = currentEntry.LevelOfKnowledge + 1,
                 LastReviewed = DateTime.Now
             });
@@ -348,8 +391,8 @@
             soundPlayer.Play("audio/wrong.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
-                Value1 = currentEntry.Value1,
-                Value2 = currentEntry.Value2,
+                Value1 = Value1Entry,
+                Value2 = Value2Entry,
                 LevelOfKnowledge = Math.Max(currentEntry.LevelOfKnowledge - 1, 0),
                 LastReviewed = DateTime.Now
             });
@@ -411,3 +454,30 @@
         }
     }
 }
+
+@inject IJSRuntime JS
+
+<script> 
+    window.drawImageWithCovers = (imageId, canvasId, covers) => {
+        const img = document.getElementById(imageId);
+        const canvas = document.getElementById(canvasId);
+        if (!img || !canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // Get the actual displayed size of the image
+        const displayWidth = img.width;
+        const displayHeight = img.height;
+
+        // Resize canvas to match image display size
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
+
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+        covers.forEach(c => {
+            ctx.fillRect(c.startX, c.startY, c.endX - c.startX, c.endY - c.startY);
+        });
+    };
+</script>

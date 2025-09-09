@@ -36,11 +36,11 @@
 
         <div class="top-nav-item" @onclick="ShowGems">
             <img src="images/gem.png" alt="Gems" class="top-nav-icon" />
-            <span class="top-nav-value blue">@gemsCount</span>
+            <span class="top-nav-value">@gemsCount</span>
         </div>
-        <div class="top-nav-item" @onclick="ShowHearts">
-            <img src="images/heart.png" alt="Hearts" class="top-nav-icon" />
-            <span class="top-nav-value red">@heartsCount</span>
+        <div class="top-nav-item" @onclick="ShowXP">
+            <img src="images/train.png" alt="XP" class="top-nav-icon" />
+            <span class="top-nav-value">@xpCount</span>
         </div>
     </div>
 </div>
@@ -72,7 +72,7 @@
     [Parameter] public int streakCount { get; set; }
     [Parameter] public int gemsCount { get; set; }
     [Parameter] public DateTime lastStudyDatetime { get; set; }
-    private int heartsCount = 4; // Example value, replace with actual data source
+    [Parameter] public int xpCount { get; set; }
     [Parameter] public CourseData currentCourse { get; set; }
     [Parameter] public List<string> courseList { get; set; } = new List<string>();
 
@@ -85,7 +85,7 @@
 
     void ShowStreak() { /* Reveal streak details below */ }
     void ShowGems() { /* Reveal gems details below */ }
-    void ShowHearts() { /* Reveal hearts details below */ }
+    void ShowXP() { /* Reveal hearts details below */ }
     void ShowCourseList()
     {
         ShowCourseListDiv = true;

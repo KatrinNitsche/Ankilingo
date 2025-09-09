@@ -9,6 +9,7 @@
                courseList="courseList"
                gemsCount="userData.GemsCount"
                streakCount="userData.StreakLength"
+               xpCount="userData.XPCount"
                OnCourseChanged="LoadCourseContent"
                lastStudyDatetime="userData.LastStudy" />
 
@@ -71,8 +72,8 @@
                                 // if the knowledge percentage is less than 75 for the current block the remaining blocks will not be rendered
                                 @if (GetPercentageOfKnowledge(entriesBlock) < 75)
                                 {
-                                    completedUnit = false;
-                                    break;
+                                   completedUnit = false;
+                                   break;
                                 }
                             }
                         }
@@ -94,8 +95,15 @@
     </div>
 </div>
 
-<ReadingComponent Entries="currentLesson" Show="showCurrentLessonModal" OnClose="() => showCurrentLessonModal = false" />
+<ReadingComponent Entries="currentLesson" 
+                  Images="imageList"
+                  Show="showCurrentLessonModal" 
+                  SectionName="currentSection"
+                  UnitName="currentUnit"
+                  OnClose="() => showCurrentLessonModal = false" />
+
 <StudyComponent Entries="currentLesson"
+                Images="imageList"
                 Show="showStudyModal"
                 OnClose="() => showStudyModal = false"
                 OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
@@ -106,6 +114,7 @@
     private string errorMessage;
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
+    private List<ImageData> imageList = new List<ImageData>();
     private string currentSection;
     private string currentUnit;
     private bool showCurrentLessonModal = false;
@@ -150,6 +159,7 @@
                 unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
             }
 
+            imageList = ExcelService.GetImages(currentCoursePath);
             userData.CurrentCourse = courseName;
             ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
             StateHasChanged();
@@ -177,6 +187,9 @@
         currentSection = sectionName;
         currentUnit = unitName;
         currentLesson = entries;
+
+        imageList = ExcelService.GetImages(@"C:\temp\AnkiLingo\" + currentCourse.Name + ".xlsx")
+            .Where(x => x.SectionName == sectionName && x.UnitName == unitName).ToList();
 
         // get additional entries from the course
         var filePath = @"C:\temp\AnkiLingo";
