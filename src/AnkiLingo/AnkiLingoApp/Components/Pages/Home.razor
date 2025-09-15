@@ -73,7 +73,7 @@
                                 @if (GetPercentageOfKnowledge(entriesBlock) < 75)
                                 {
                                    completedUnit = false;
-                                   break;
+                                  // break;
                                 }
                             }
                         }
@@ -82,13 +82,13 @@
                     @if (!completedUnit)
                     {
                         completedSection = false;
-                        break;
+                        //break;
                     }
 
                     unitIndex++;
                 }
 
-                @if (!completedSection) { break; }
+               // @if (!completedSection) { break; }
                 sectionIndex++;
             }
         }

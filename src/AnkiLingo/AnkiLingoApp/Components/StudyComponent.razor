@@ -98,11 +98,31 @@
                                 </div>
                             </div>
                             break;
-                        case QuestionType.Image:                            
-                            <div class="image-question text-center">                              
-                                <img src="@entry.AnswerText" alt="Image" style="max-width: 800px; max-height: 800px;" />
-                                <br />
-                                <button class="btn btn-primary mt-2" @onclick="() => currentQuestionIndex++">I have reviewed the image</button>
+                        case QuestionType.Image:
+                            <div class="image-question text-center">
+
+                                <div class="d-flex flex row justify-content-between">
+
+                                    <div class="image-canvas-container col-9">
+                                        <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
+                                             style="max-width: 100%; max-height: 100%;" />
+                                        <canvas id="drawCanvas"
+                                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto;"></canvas>
+                                    </div>
+
+                                    <ul class="list-group col-3">
+                                        @foreach (var cover in entry.ImageWords)
+                                        {
+                                            <li class="active list-group-item">
+                                                <input type="number" class="w-50" />
+                                                <br />
+                                                @cover.Value.Value1 (@cover.Id)</li>
+                                        }
+                                    </ul>
+                                </div>
+
+                                <button class="btn btn-primary mt-2" @onclick="() => currentQuestionIndex++">Check My Answers</button>
+
                             </div>
 
                             break;
@@ -146,6 +166,7 @@
 
     private List<string> leftEntriesRemoved = new List<string>();
     private List<string> rightEntriesRemoved = new List<string>();
+    private bool needsImageRedraw = false;
 
     protected override void OnParametersSet()
     {
@@ -153,7 +174,8 @@
         SetQuestions();
     }
 
-    public void SetQuestions()
+   
+    public async Task SetQuestions()
     {
         questions.Clear();
         Entries = Entries.OrderBy(e => Guid.NewGuid()).ToList();
@@ -165,7 +187,7 @@
                 questions.Add(new Question
                 {
                     Value1 = img.ImageName,
-                    Value2 = $"images/{img.ImageName}.jpg",
+                    Value2 = $"images/{img.ImageName} IndexDisplay.jpg",
                     QuestionText = $"What does this image represent?",
                     AnswerText = $"images/{img.ImageName}.jpg",
                     LevelOfKnowledge = 0,
@@ -174,7 +196,7 @@
                     Options = new List<string>(),
                     LeftValues = new List<string>(),
                     RightValues = new List<string>(),
-                    ImageCovers = img.ImageCovers
+                    ImageWords = img.ImageCovers.OrderBy(i => Guid.NewGuid()).ToList()
                 });
             }
         }
@@ -260,6 +282,10 @@
 
         started = true;
         startTime = TimeOnly.FromDateTime(DateTime.Now);
+
+        // Set flag instead of calling JS directly
+        needsImageRedraw = questions.Any(q => q.QuestionType == QuestionType.Image);
+        StateHasChanged();
     }
 
     /// <summary>
@@ -353,7 +379,7 @@
 
     private void CheckListAnswer()
     {
-        var currentEntry = Entries.FirstOrDefault(e => e.Value1 == selectedLeftValue || e.Value1 == selectedRightValue);
+        var currentEntry = Entries.FirstOrDefault(e => e.Value1 == selectedLeftValue || e.Value2 == selectedRightValue || e.Value2 == selectedLeftValue || e.Value2 == selectedLeftValue);
         // check if there is a correct combination of left and right value in the Entries list for Value1 and Value2
         var checkIfAnswerIsCorrect = Entries.Any(e => (e.Value1 == selectedLeftValue && e.Value2 == selectedRightValue) ||
                                                       (e.Value1 == selectedRightValue && e.Value2 == selectedLeftValue));
@@ -455,29 +481,4 @@
     }
 }
 
-@inject IJSRuntime JS
 
-<script> 
-    window.drawImageWithCovers = (imageId, canvasId, covers) => {
-        const img = document.getElementById(imageId);
-        const canvas = document.getElementById(canvasId);
-        if (!img || !canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        // Get the actual displayed size of the image
-        const displayWidth = img.width;
-        const displayHeight = img.height;
-
-        // Resize canvas to match image display size
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
-
-        ctx.fillStyle = 'rgba(0,0,0,1)';
-        covers.forEach(c => {
-            ctx.fillRect(c.startX, c.startY, c.endX - c.startX, c.endY - c.startY);
-        });
-    };
-</script>

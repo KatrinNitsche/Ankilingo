@@ -204,20 +204,7 @@ namespace AnkiLingoExcelService
             using var workbook = new XLWorkbook(filePath);
             var worksheet = workbook.Worksheet("Images");
             int row = 3;
-            var images = new List<ImageData>();
-            // each row containes one entry for an Image Cover
-            // A - Section	
-            // B - Unit
-            // C - Image
-            // D - Start X	
-            // E - Start Y	
-            // F - End X
-            // G - End Y
-            // H - Value	
-            // I - Level Of Knowledge	
-            // J - Last Reviewed	
-            // K - Review Count
-            // the next image starts when the Column C changes            
+            var images = new List<ImageData>();                 
             while (!worksheet.Cell($"A{row}").IsEmpty())
             {
                 var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
@@ -231,7 +218,7 @@ namespace AnkiLingoExcelService
                         SectionName = sectionName,
                         UnitName = unitName,
                         ImageName = imageName,
-                        ImageCovers = new List<ImageCover>()
+                        ImageCovers = new List<ImageWord>()
                     };
                     images.Add(image);
                 }
@@ -239,31 +226,27 @@ namespace AnkiLingoExcelService
                 // the following columns can be empty or contain data for an image cover
                 if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty() ||
                     worksheet.Cell($"F{row}").IsEmpty() || worksheet.Cell($"G{row}").IsEmpty() ||
-                    worksheet.Cell($"H{row}").IsEmpty() || worksheet.Cell($"I{row}").IsEmpty() ||
-                    worksheet.Cell($"J{row}").IsEmpty() || worksheet.Cell($"K{row}").IsEmpty())
+                    worksheet.Cell($"H{row}").IsEmpty()) 
                 {
                     row++;
                 }
                 else
                 {
-                    var startX = worksheet.Cell($"D{row}").GetValue<double>();
-                    var startY = worksheet.Cell($"E{row}").GetValue<double>();
-                    var endX = worksheet.Cell($"F{row}").GetValue<double>();
-                    var endY = worksheet.Cell($"G{row}").GetValue<double>();
-                    var value = worksheet.Cell($"H{row}").GetValue<string>();
-                    var levelOfKnowledge = worksheet.Cell($"I{row}").GetValue<int>();
-                    var lastReviewed = worksheet.Cell($"J{row}").GetValue<DateTime>();
-                    var reviewCount = worksheet.Cell($"K{row}").GetValue<int>();
-                    var imageCover = new ImageCover
+                    var index = worksheet.Cell($"D{row}").GetValue<int>();
+                    var Value1 = worksheet.Cell($"E{row}").GetValue<string>();
+                    var Value2 = string.Empty;
+                    var LevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
+                    var imageCover = new ImageWord
                     {
-                        StartX = startX,
-                        StartY = startY,
-                        EndX = endX,
-                        EndY = endY,
-                        Value = value,
-                        LevelOfKnowledge = levelOfKnowledge,
-                        LastReviewed = lastReviewed,
-                        ReviewCount = reviewCount
+                        Id = index,
+                        Value = new EntryData
+                        {
+                            Value1 = Value1,
+                            Value2 = Value2,
+                            LevelOfKnowledge = LevelOfKnowledge,
+                            LastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>(),
+                            ReviewCount = worksheet.Cell($"H{row}").GetValue<int>()
+                        }
                     };
                     image.ImageCovers.Add(imageCover);
                 }
@@ -272,39 +255,6 @@ namespace AnkiLingoExcelService
             }
 
             return images;
-        }
-
-        public static bool SaveImageData(string filePath, ImageData imageData)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return false;
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet("Images"); // 1-based index for the first worksheet
-            int row = 3;
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                row++;
-            }
-            foreach (var imageCover in imageData.ImageCovers)
-            {
-                worksheet.Cell($"A{row}").Value = imageData.SectionName;
-                worksheet.Cell($"B{row}").Value = imageData.UnitName;
-                worksheet.Cell($"C{row}").Value = imageData.ImageName;
-                worksheet.Cell($"D{row}").Value = imageCover.StartX;
-                worksheet.Cell($"E{row}").Value = imageCover.StartY;
-                worksheet.Cell($"F{row}").Value = imageCover.EndX;
-                worksheet.Cell($"G{row}").Value = imageCover.EndY;
-                worksheet.Cell($"H{row}").Value = imageCover.Value;
-                worksheet.Cell($"I{row}").Value = imageCover.LevelOfKnowledge;
-                worksheet.Cell($"J{row}").Value = imageCover.LastReviewed;
-                worksheet.Cell($"K{row}").Value = imageCover.ReviewCount;
-                row++;
-            }
-            workbook.Save();
-            return true;
         }
 
         /// <summary>

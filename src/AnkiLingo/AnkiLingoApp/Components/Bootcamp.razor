@@ -73,72 +73,10 @@
             @if (!string.IsNullOrEmpty(selectedSection) && !string.IsNullOrEmpty(selectedUnit))
             {
                 <button class="btn btn-secondary mt-4" @onclick="StartStudySession">Study</button>
-            }
-
-            <button class="btn btn-primary mt-4" @onclick="LoadImages">Load Images</button>
-            <button class="btn btn-secondary mt-4" @onclick="() => {images.Clear(); currentImage = null;}">Clear Images</button>
+            }    
         </div>
-
-        @if (currentImage != null)
-        {
-            <div class="d-flex flex-row gap-3 mb-3">
-
-                <div class="form-group">
-                    <label for="selected-image">Selected Image</label>
-                    <select id="selected-image" class="form-select" @bind="currentImageName">
-                        @if (images != null && images.Count() > 0)
-                        {
-                            @foreach (ImageData img in images)
-                            {
-                                <option value="@img.ImageName">@img.ImageName</option>
-                            }
-                        }
-                    </select>
-                    <button class="btn btn-secondary mt-2" @onclick="RedrawImageWithCoversAsync">Redraw Image with Covers</button>
-                </div>
-
-                <div class="form-group">
-                    <lable for="max-width">Max Width:</lable>"
-                    <input id="max-width" type="number" class="form-control" style="width: 100px;" @bind="currentImageMaxWidth" />
-                </div>
-
-                <div class="form-group">
-                    <lable for="max-height">Max Height:</lable>"
-                    <input id="max-height" type="number" class="form-control" style="width: 100px;" @bind="currentImageMaxHeight" />
-                </div>
-
-                <div class="form-group mb-2">
-                    <label for="coverText">Text to associate with next cover:</label>
-                    <input id="coverText" class="form-control" style="width: 300px;" @bind="coverText" />
-                </div>
-                <button class="btn btn-primary" @onclick="SaveImage">Save</button>
-            </div>
-
-            @if (currentImage != null)
-            {
-                <div style="position: relative; display: inline-block;">
-                    <img id="mainImage" src="@imagePath" alt="@currentImage.ImageName"
-                         style="max-width: @(currentImageMaxWidth)px; max-height: @(currentImageMaxHeight)px;" />
-                    <canvas id="drawCanvas"
-                            width="@currentImageMaxWidth"
-                            height="@currentImageMaxHeight"
-                            style="position: absolute; top: 0; left: 0; pointer-events: auto;"
-                            @onmousedown="OnMouseDown"
-                            @onmousemove="OnMouseMove"
-                            @onmouseup="OnMouseUp"></canvas>
-                </div>
-
-                <ul>
-                    @foreach (var cover in currentImage.ImageCovers)
-                    {
-                        <li>Cover: @cover.Value (@cover.StartX, @cover.StartY, @cover.EndX, @cover.EndY)</li>
-                    }
-                </ul>
-            }
-        }
-        else
-        {
-            <ul class="d-flex flex-row flex-wrap gap-4">
+               
+        <ul class="d-flex flex-row flex-wrap gap-4">
                 @foreach (var entry in Entries)
                 {
                     <li class="list-group-item w-25 p-3 border rounded-2 shadow">
@@ -189,8 +127,7 @@
                     </li>
                 }
             </ul>
-
-        }
+                   
         <StudyComponent @ref="studyComponentRef"
                         Entries="StudyContent"
                         Show="showStudyModal"
@@ -228,79 +165,7 @@
     private int currentImageMaxWidth = 1000;
     private int currentImageMaxHeight = 1000;
     private string coverText = "";
-
-    #region drawing mode
-
-    private bool isDrawing = false;
-    private double startX, startY, endX, endY;
-
-    private async Task OnMouseDown(MouseEventArgs e)
-    {
-        isDrawing = true;
-        startX = e.OffsetX;
-        startY = e.OffsetY;
-    }
-
-    private async Task OnMouseMove(MouseEventArgs e)
-    {
-        if (isDrawing)
-        {
-            endX = e.OffsetX;
-            endY = e.OffsetY;
-            await DrawRectangle();
-        }
-    }
-
-    private async Task OnMouseUp(MouseEventArgs e)
-    {
-        isDrawing = false;
-        endX = e.OffsetX;
-        endY = e.OffsetY;
-        currentImage.ImageCovers.Add(new ImageCover
-        {
-            StartX = (int)startX,
-            StartY = (int)startY,
-            EndX = (int)endX,
-            EndY = (int)endY,
-            Value = coverText
-        });
-
-        coverText = "";        
-        await RedrawImageWithCoversAsync();
-    }
-
-    private async Task RedrawImageWithCoversAsync()
-    {
-        if (currentImage == null) return;
-
-        currentImage = images.FirstOrDefault(i => i.ImageName == currentImageName);
-        if (currentImage == null) return;
-
-        var covers = currentImage.ImageCovers.Select(c => new {
-            startX = c.StartX,
-            startY = c.StartY,
-            endX = c.EndX,
-            endY = c.EndY
-        }).ToList();
-        await JS.InvokeVoidAsync("drawImageWithCovers", "mainImage", "drawCanvas", covers);
-    }
-
-    @inject IJSRuntime JS
-
-    @code {
-        // ... existing code ...
-
-        private async Task DrawRectangle()
-        {
-            // Use JS interop to draw on the canvas
-            await JS.InvokeVoidAsync("drawRectOnCanvas", startX, startY, endX - startX, endY - startY);
-        }
-
-        // ... existing code ...
-    }
-
-    #endregion 
-
+     
     protected override async Task OnInitializedAsync()
     {
     try
@@ -399,64 +264,4 @@
     var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
     ExcelService.UpdateEntry(currentCoursePath, selectedSection, selectedUnit, value1, value2, levelOfKnowledge);
     }
-
-    protected async Task LoadImages()
-    {
-        var filePath = @"C:\temp\AnkiLingo";
-        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
-
-        images = ExcelService.GetImages(currentCoursePath);
-
-        // filter images to only those that have entries in the current section and unit
-        if (!string.IsNullOrEmpty(selectedSection) && !string.IsNullOrEmpty(selectedUnit))
-        {
-            images = images.Where( x => x.SectionName == selectedSection && x.UnitName == selectedUnit).ToList();
-        }
-
-        currentImage = images[0];
-        currentImageName = currentImage.ImageName;
-        await RedrawImageWithCoversAsync();
-    }
-
-    protected void SaveImage()
-    {
-        if (currentImage == null) return;
-        var filePath = @"C:\temp\AnkiLingo";
-        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
-        ExcelService.SaveImageData(currentCoursePath, currentImage);
-    }
 }
-
-<script>
-window.drawRectOnCanvas = (x, y, w, h) => {
-    const canvas = document.getElementById('drawCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, w, h);
-};
-
-window.drawImageWithCovers = (imageId, canvasId, covers) => {
-    const img = document.getElementById(imageId);
-    const canvas = document.getElementById(canvasId);
-    if (!img || !canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    // Get the actual displayed size of the image
-    const displayWidth = img.width;
-    const displayHeight = img.height;
-
-    // Resize canvas to match image display size
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, displayWidth, displayHeight);
-
-    ctx.fillStyle = 'rgba(0,0,0,1)';
-    covers.forEach(c => {
-        ctx.fillRect(c.startX, c.startY, c.endX - c.startX, c.endY - c.startY);
-    });
-};
-</script>

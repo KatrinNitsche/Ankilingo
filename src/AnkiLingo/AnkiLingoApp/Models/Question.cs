@@ -31,7 +31,7 @@ namespace AnkiLingoApp.Models
         public string UserAnswer { get; set; }
         public List<string> LeftValues { get; set; } = new List<string>();
         public List<string> RightValues { get; set; } = new List<string>();
-        public List<ImageCover> ImageCovers { get; set; } = new List<ImageCover>();
+        public List<ImageWord> ImageWords { get; set; } = new List<ImageWord>();
         #endregion
     }
 }
