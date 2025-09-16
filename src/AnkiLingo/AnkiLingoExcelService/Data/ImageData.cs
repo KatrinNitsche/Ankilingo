@@ -9,8 +9,10 @@
     }
 
     public class ImageWord
-    {  
+    {
         public int Id { get; set; }
-        public EntryData Value { get; set; }        
+        public EntryData Value { get; set; }
+        public int UserInput { get; set; }
+        public bool WasChecked { get; set; } = false;
     }
 }

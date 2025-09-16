@@ -103,25 +103,33 @@
 
                                 <div class="d-flex flex row justify-content-between">
 
-                                    <div class="image-canvas-container col-9">
+                                    <div class="image-canvas-container w-50">
                                         <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
                                              style="max-width: 100%; max-height: 100%;" />
-                                        <canvas id="drawCanvas"
-                                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto;"></canvas>
                                     </div>
 
-                                    <ul class="list-group col-3">
+                                    <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
                                         @foreach (var cover in entry.ImageWords)
                                         {
-                                            <li class="active list-group-item">
-                                                <input type="number" class="w-50" />
-                                                <br />
-                                                @cover.Value.Value1 (@cover.Id)</li>
+                                            <li class="active list-group-item" style="@StyleForImageCover(cover)">
+                                                @if (!cover.WasChecked)
+                                                {
+                                                    <input type="number" class="w-50" @bind="cover.UserInput" />
+                                                    <br />
+                                                }
+                                                @cover.Value.Value1
+                                            </li>
                                         }
                                     </ul>
                                 </div>
 
-                                <button class="btn btn-primary mt-2" @onclick="() => currentQuestionIndex++">Check My Answers</button>
+                                @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                                {
+                                    <button class="btn btn-primary mt-2" @onclick="CheckImageAnswers">Check My Answers</button>
+                                }
+
+                                <button class="btn btn-primary mt-2" @onclick="NextQuestion">Next Question</button>
+
 
                             </div>
 
@@ -149,6 +157,8 @@
     [Parameter] public EventCallback<EntryData> OnUpdateEntry { get; set; }
     [Inject] private ISoundPlayer soundPlayer { get; set; }
     [Parameter] public CourseData CurrentCourse { get; set; }
+    [Parameter] public string currentSection { get; set; }
+    [Parameter] public string currentUnit { get; set; }
 
     private List<Question> questions = new List<Question>();
     private int currentQuestionIndex = 0;
@@ -174,7 +184,6 @@
         SetQuestions();
     }
 
-   
     public async Task SetQuestions()
     {
         questions.Clear();
@@ -288,10 +297,6 @@
         StateHasChanged();
     }
 
-    /// <summary>
-    /// Get a random question type from the QuestionType enum but have the first 4 question types be more likely to be selected.
-    /// </summary>
-    /// <returns></returns>
     private QuestionType GetRandomQuestionTypeFromEnum()
     {
         var questionTypes = Enum.GetValues(typeof(QuestionType)).Cast<QuestionType>().ToList();
@@ -357,6 +362,17 @@
         }
 
         StateHasChanged();
+    }
+
+    private void NextQuestion()
+    {
+        currentQuestionIndex++;
+        if (currentQuestionIndex >= questions.Count)
+        {
+            FinishLesson();
+        }
+        StateHasChanged();
+
     }
 
     private void SelectLeft(string leftValue)
@@ -439,6 +455,40 @@
                 currentQuestionIndex++;
             }
         }
+    }
+
+    private void CheckImageAnswers()
+    {
+        var currentImage = questions[currentQuestionIndex];
+        foreach (var entry in currentImage.ImageWords)
+        {
+            entry.WasChecked = true;
+            entry.Value.LastReviewed = DateTime.Now;
+            if (entry.Id == entry.UserInput)
+            {
+                if (entry.Value.LevelOfKnowledge < 10) entry.Value.LevelOfKnowledge++;
+                correctAnswersCount++;
+            }
+            else
+            {
+                if (entry.Value.LevelOfKnowledge > 0) entry.Value.LevelOfKnowledge--;
+                incorrectAnswersCount++;
+            }
+
+            var filePath = @"C:\temp\AnkiLingo";
+            var currentCoursePath = $"{filePath}\\{CurrentCourse.Name}.xlsx";
+            ExcelService.UpdateImageEntry(currentCoursePath, currentSection, currentUnit, currentImage.Value1, entry.Id, entry.Value.LevelOfKnowledge);
+        }
+    }
+
+    private string StyleForImageCover(ImageWord question)
+    {
+        if (!question.WasChecked)
+        {
+            return "background-color: lightgray;";
+        }
+
+        return $"background-color: {(question.WasChecked && question.Id == question.UserInput ? "green" : "red")};";
     }
 
     private async Task RevealAnswerForXSeceonds(int seconds, string text)

@@ -98,8 +98,8 @@
 <ReadingComponent Entries="currentLesson" 
                   Images="imageList"
                   Show="showCurrentLessonModal" 
-                  SectionName="currentSection"
-                  UnitName="currentUnit"
+                  SectionName="currentSectionName"
+                  UnitName="currentUnitName"
                   OnClose="() => showCurrentLessonModal = false" />
 
 <StudyComponent Entries="currentLesson"
@@ -107,7 +107,9 @@
                 Show="showStudyModal"
                 OnClose="() => showStudyModal = false"
                 OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
-                CurrentCourse="currentCourse" />
+                CurrentCourse="@currentCourse"
+                currentSection="@currentSectionName"
+                currentUnit="@currentUnitName" />
 
 @code {
     private List<string> courseList = new List<string>();
@@ -115,8 +117,8 @@
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
     private List<ImageData> imageList = new List<ImageData>();
-    private string currentSection;
-    private string currentUnit;
+    private string currentSectionName;
+    private string currentUnitName;
     private bool showCurrentLessonModal = false;
     private bool showStudyModal = false;
 
@@ -179,13 +181,13 @@
 
         var filePath = @"C:\temp\AnkiLingo";
         var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
-        ExcelService.UpdateEntry(currentCoursePath, currentSection, currentUnit, value1, value2, levelOfKnowledge);
+        ExcelService.UpdateEntry(currentCoursePath, currentSectionName, currentUnitName, value1, value2, levelOfKnowledge);
     }
 
     protected void SetCurrentLesson(List<EntryData> entries, string sectionName, string unitName, bool study = false)
     {
-        currentSection = sectionName;
-        currentUnit = unitName;
+        currentSectionName = sectionName;
+        currentUnitName = unitName;
         currentLesson = entries;
 
         imageList = ExcelService.GetImages(@"C:\temp\AnkiLingo\" + currentCourse.Name + ".xlsx")

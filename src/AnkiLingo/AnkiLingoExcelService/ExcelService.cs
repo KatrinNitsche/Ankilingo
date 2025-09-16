@@ -257,6 +257,43 @@ namespace AnkiLingoExcelService
             return images;
         }
 
+        public static bool UpdateImageEntry(string filePath, string sectionName, string unitName, string imageName, int index, int levelOfKnowledge)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return false;
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet("Images");
+            int row = 3;
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                if (worksheet.Cell($"A{row}").GetValue<string>() == sectionName &&
+                    worksheet.Cell($"B{row}").GetValue<string>() == unitName &&
+                    worksheet.Cell($"C{row}").GetValue<string>() == imageName &&
+                    worksheet.Cell($"D{row}").GetValue<int>() == index)
+                {
+                    var reviewCountCell = worksheet.Cell($"H{row}");
+                    var lastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>();
+                    var oldLevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
+                    if (oldLevelOfKnowledge < levelOfKnowledge)
+                    {
+                        // Increment review count if the level of knowledge has increased
+                        int newReviewCount = reviewCountCell.GetValue<int>() + 1;
+                        reviewCountCell.Value = newReviewCount;
+                    }
+                    worksheet.Cell($"F{row}").Value = levelOfKnowledge;
+                    worksheet.Cell($"G{row}").Value = DateTime.Now; // Update Last Reviewed to now
+                    workbook.Save();
+                    return true;
+                }
+                row++;
+            }
+            Console.WriteLine("Entry not found.");
+            return false;
+        }
+
         /// <summary>
         /// Updates the LevelOfKnowledge and LastReviewed fields of an entry in the specified section and unit.
         /// </summary>
