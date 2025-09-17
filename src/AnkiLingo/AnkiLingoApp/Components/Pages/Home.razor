@@ -28,6 +28,11 @@
         }
         else
         {
+            <div class="form-group w-75 m-auto">
+                <input type="checkbox" id="showEntireCourse" @bind="showEntireCourse" />
+                <label for="showEntireCourse">Show Entire Course</label>
+            </div>
+
             @* course content *@
             var sectionIndex = 1;
             @foreach (SectionData sectionData in currentCourse.Sections)
@@ -46,16 +51,29 @@
                     <div class="lesson-buttons d-flex flex-column align-items-center">
                         @{
                             var devider = 10;
-                            if (unitData.Entries.Count < 10)
+                            if (unitData.Entries.Count < devider)
                             {
                                 devider = unitData.Entries.Count;
                             }
 
-                            for (var blockIndex = 0; blockIndex < unitData.Entries.Count / devider; blockIndex++)
+                            // Build lesson blocks
+                            var lessonBlocks = new List<List<EntryData>>();
+                            for (var startIndex = 0; startIndex < unitData.Entries.Count; startIndex += devider)
                             {
-                                var startIndex = blockIndex * devider;
                                 var endIndex = Math.Min(startIndex + devider, unitData.Entries.Count);
-                                var entriesBlock = unitData.Entries.Skip(startIndex).Take(endIndex - startIndex).ToList();
+                                lessonBlocks.Add(unitData.Entries.Skip(startIndex).Take(endIndex - startIndex).ToList());
+                            }
+
+                            // If last block is small, merge it with previous
+                            if (lessonBlocks.Count > 1 && lessonBlocks.Last().Count <= 5)
+                            {
+                                var lastBlock = lessonBlocks.Last();
+                                lessonBlocks.RemoveAt(lessonBlocks.Count - 1);
+                                lessonBlocks[lessonBlocks.Count - 1].AddRange(lastBlock);
+                            }
+
+                            foreach (var entriesBlock in lessonBlocks)
+                            {
                                 <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
                                         @onclick="() => SetCurrentLesson(entriesBlock, sectionData.Name, unitData.Name, false)">
                                     <span>
@@ -69,35 +87,34 @@
                                     </span>
                                 </button>
 
-                                // if the knowledge percentage is less than 75 for the current block the remaining blocks will not be rendered
-                                @if (GetPercentageOfKnowledge(entriesBlock) < 75)
+                                @if (GetPercentageOfKnowledge(entriesBlock) < 75 && !showEntireCourse)
                                 {
-                                   completedUnit = false;
-                                  // break;
+                                    completedUnit = false;
+                                    break;
                                 }
                             }
                         }
                     </div>
 
-                    @if (!completedUnit)
+                    @if (!completedUnit && !showEntireCourse)
                     {
                         completedSection = false;
-                        //break;
+                        break;
                     }
 
                     unitIndex++;
                 }
 
-               // @if (!completedSection) { break; }
+                @if (!completedSection && !showEntireCourse) { break; }
                 sectionIndex++;
             }
         }
     </div>
 </div>
 
-<ReadingComponent Entries="currentLesson" 
+<ReadingComponent Entries="currentLesson"
                   Images="imageList"
-                  Show="showCurrentLessonModal" 
+                  Show="showCurrentLessonModal"
                   SectionName="currentSectionName"
                   UnitName="currentUnitName"
                   OnClose="() => showCurrentLessonModal = false" />
@@ -121,6 +138,7 @@
     private string currentUnitName;
     private bool showCurrentLessonModal = false;
     private bool showStudyModal = false;
+    private bool showEntireCourse = false;
 
     private List<string> BackgroundColours = new List<string>()
     {
@@ -151,7 +169,7 @@
     protected void LoadCourseContent(string courseName)
     {
         try
-        {            
+        {
             var filePath = @"C:\temp\AnkiLingo";
             var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
             currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
