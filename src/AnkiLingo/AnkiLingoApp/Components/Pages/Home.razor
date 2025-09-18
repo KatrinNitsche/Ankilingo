@@ -217,7 +217,7 @@
 
         if (study)
         {
-            var entriesToAdd = new List<EntryData>();
+
             var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
            .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
                        !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
@@ -225,17 +225,20 @@
             /*
               Initial Review: Ideally, you should review the material within 24 hours of first learning it.
                               This helps solidify the information in your short-term memory.
-              Subsequent Reviews: The intervals between subsequent reviews should gradually increase. A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on. However, you can adjust this based on how well you remember the material. If you're struggling, you can shorten the intervals. If you're easily remembering, you can lengthen them.
+                              Subsequent Reviews: The intervals between subsequent reviews should gradually increase.
+                              A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on. 
+                              However, you can adjust this based on how well you remember the material. If you're struggling, 
+                              you can shorten the intervals. If you're easily remembering, you can lengthen them.
 
                 Here's a sample spaced repetition schedule:
-                Day 1: Initial learning
-                Day 2: First review
-                Day 4: Second review
-                Day 8: Third review
-                Day 15: Fourth review
-                Day 30: Fifth review
+                    Day 1: Initial learning
+                    Day 2: First review
+                    Day 4: Second review
+                    Day 8: Third review
+                    Day 15: Fourth review
+                    Day 30: Fifth review
              */
-
+            var entriesToAdd = new List<EntryData>();
             // get entries that where reviewed 1 time and last reviewed more than 1 day ago
             entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
             // get entries that where reviewed 2 times and last reviewed more than 3 days ago

@@ -204,7 +204,7 @@ namespace AnkiLingoExcelService
             using var workbook = new XLWorkbook(filePath);
             var worksheet = workbook.Worksheet("Images");
             int row = 3;
-            var images = new List<ImageData>();                 
+            var images = new List<ImageData>();
             while (!worksheet.Cell($"A{row}").IsEmpty())
             {
                 var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
@@ -226,7 +226,7 @@ namespace AnkiLingoExcelService
                 // the following columns can be empty or contain data for an image cover
                 if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty() ||
                     worksheet.Cell($"F{row}").IsEmpty() || worksheet.Cell($"G{row}").IsEmpty() ||
-                    worksheet.Cell($"H{row}").IsEmpty()) 
+                    worksheet.Cell($"H{row}").IsEmpty())
                 {
                     row++;
                 }
@@ -274,15 +274,9 @@ namespace AnkiLingoExcelService
                     worksheet.Cell($"C{row}").GetValue<string>() == imageName &&
                     worksheet.Cell($"D{row}").GetValue<int>() == index)
                 {
-                    var reviewCountCell = worksheet.Cell($"H{row}");
-                    var lastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>();
-                    var oldLevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
-                    if (oldLevelOfKnowledge < levelOfKnowledge)
-                    {
-                        // Increment review count if the level of knowledge has increased
-                        int newReviewCount = reviewCountCell.GetValue<int>() + 1;
-                        reviewCountCell.Value = newReviewCount;
-                    }
+                    var reviewCountCell = worksheet.Cell($"H{row}");                     
+                    int newReviewCount = reviewCountCell.GetValue<int>() + 1;
+                    reviewCountCell.Value = newReviewCount;
                     worksheet.Cell($"F{row}").Value = levelOfKnowledge;
                     worksheet.Cell($"G{row}").Value = DateTime.Now; // Update Last Reviewed to now
                     workbook.Save();

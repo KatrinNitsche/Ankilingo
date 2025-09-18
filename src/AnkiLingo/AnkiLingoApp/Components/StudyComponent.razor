@@ -103,11 +103,20 @@
 
                                 <div class="d-flex flex row justify-content-between">
 
-                                    <div class="image-canvas-container w-50">
-                                        <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
-                                             style="max-width: 100%; max-height: 100%;" />
-                                    </div>
-
+                                    @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                                    {
+                                        <div class="image-canvas-container w-50">
+                                            <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
+                                                 style="max-width: 100%; max-height: 100%;" />
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="image-canvas-container w-50">
+                                            <img id="mainImage" src="@entry.Value1" alt="@entry.Value1"
+                                                 style="max-width: 100%; max-height: 100%;" />
+                                        </div>
+                                    }
                                     <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
                                         @foreach (var cover in entry.ImageWords)
                                         {
@@ -195,10 +204,10 @@
             {
                 questions.Add(new Question
                 {
-                    Value1 = img.ImageName,
+                    Value1 = $"images/{img.ImageName}.jpg",
                     Value2 = $"images/{img.ImageName} IndexDisplay.jpg",
                     QuestionText = $"What does this image represent?",
-                    AnswerText = $"images/{img.ImageName}.jpg",
+                    AnswerText = img.ImageName,
                     LevelOfKnowledge = 0,
                     LastReviewed = DateTime.Now,
                     QuestionType = QuestionType.Image,
@@ -291,6 +300,9 @@
 
         started = true;
         startTime = TimeOnly.FromDateTime(DateTime.Now);
+
+        // shuffle the questions
+        questions = questions.OrderBy(q => Guid.NewGuid()).ToList();
 
         // Set flag instead of calling JS directly
         needsImageRedraw = questions.Any(q => q.QuestionType == QuestionType.Image);
@@ -466,18 +478,26 @@
             entry.Value.LastReviewed = DateTime.Now;
             if (entry.Id == entry.UserInput)
             {
-                if (entry.Value.LevelOfKnowledge < 10) entry.Value.LevelOfKnowledge++;
+                if (entry.Value.LevelOfKnowledge < 10)
+                {
+                    entry.Value.LevelOfKnowledge++;
+                }
+                xp += 2;
                 correctAnswersCount++;
             }
             else
             {
-                if (entry.Value.LevelOfKnowledge > 0) entry.Value.LevelOfKnowledge--;
+                if (entry.Value.LevelOfKnowledge > 0)
+                {
+                    entry.Value.LevelOfKnowledge--;
+                }
+                xp -= 2;
                 incorrectAnswersCount++;
             }
 
             var filePath = @"C:\temp\AnkiLingo";
             var currentCoursePath = $"{filePath}\\{CurrentCourse.Name}.xlsx";
-            ExcelService.UpdateImageEntry(currentCoursePath, currentSection, currentUnit, currentImage.Value1, entry.Id, entry.Value.LevelOfKnowledge);
+            ExcelService.UpdateImageEntry(currentCoursePath, currentSection, currentUnit, currentImage.AnswerText, entry.Id, entry.Value.LevelOfKnowledge);
         }
     }
 
