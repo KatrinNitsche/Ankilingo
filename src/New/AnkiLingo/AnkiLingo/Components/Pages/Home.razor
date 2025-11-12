@@ -1,7 +1,304 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using AnkiLingo.Data
+@using AnkiLingo.Services
+@using AnkiLingoExcelService
+@using AnkiLingoExcelService.Data
 
-<PageTitle>Home</PageTitle>
+<PageTitle>AnkiLingo</PageTitle>
 
-<h1>Hello, world!</h1>
+<AuthorizeView>
+    <Authorized>
+        <TopNavigation currentCourse="currentCourse"
+                       courseList="courseList"
+                       gemsCount="userData.GemsCount"
+                       streakCount="userData.StreakLength"
+                       xpCount="userData.XPCount"
+                       OnCourseChanged="LoadCourseContent"
+                       lastStudyDatetime="userData.LastStudy" />
 
-Welcome to your new app.
+        <div class="d-flex flex-row gap-3">
+            <SiteNavigation />
+
+            <div id="course-content" class="w-75">
+
+                @if (currentCourse == null)
+                {
+                    <p>Loading...</p>
+                }
+                else if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="text-danger">@errorMessage</p>
+                }
+                else
+                {
+                    <div class="form-group w-75 m-auto">
+                        <input type="checkbox" id="showEntireCourse" @bind="showEntireCourse" />
+                        <label for="showEntireCourse">Show Entire Course</label>
+                    </div>
+
+                    @* course content *@
+                    var sectionIndex = 1;
+                    @foreach (SectionData sectionData in currentCourse.Sections)
+                    {
+                        var completedSection = true;
+                        var unitIndex = 1;
+                        @foreach (UnitData unitData in sectionData.Units)
+                        {
+                            var completedUnit = true;
+
+                            <div class="section-header w-75 m-auto" style="background-color: @unitData.BackgroundColor">
+                                <p>Section @sectionIndex, Unit @unitIndex</p>
+                                <b>@sectionData.Name - @unitData.Name (@unitData.Entries.Count())</b>
+                            </div>
+
+                            <div class="lesson-buttons d-flex flex-column align-items-center">
+                                @{
+                                    var devider = 10;
+                                    if (unitData.Entries.Count < devider)
+                                    {
+                                        devider = unitData.Entries.Count;
+                                    }
+
+                                    // Build lesson blocks
+                                    var lessonBlocks = new List<List<EntryData>>();
+                                    for (var startIndex = 0; startIndex < unitData.Entries.Count; startIndex += devider)
+                                    {
+                                        var endIndex = Math.Min(startIndex + devider, unitData.Entries.Count);
+                                        lessonBlocks.Add(unitData.Entries.Skip(startIndex).Take(endIndex - startIndex).ToList());
+                                    }
+
+                                    // If last block is small, merge it with previous
+                                    if (lessonBlocks.Count > 1 && lessonBlocks.Last().Count <= 5)
+                                    {
+                                        var lastBlock = lessonBlocks.Last();
+                                        lessonBlocks.RemoveAt(lessonBlocks.Count - 1);
+                                        lessonBlocks[lessonBlocks.Count - 1].AddRange(lastBlock);
+                                    }
+
+                                    foreach (var entriesBlock in lessonBlocks)
+                                    {
+                                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                                @onclick="() => SetCurrentLesson(entriesBlock, sectionData.Name, unitData.Name, false)">
+                                            <span>
+                                                <i class="material-icons">menu_book</i>
+                                            </span>
+                                        </button>
+                                        <button class="lesson-botton" style="background-color: @unitData.BackgroundColor"
+                                                @onclick="() => SetCurrentLesson(entriesBlock, sectionData.Name, unitData.Name, true)">
+                                            <span>
+                                                @GetPercentageOfKnowledge(entriesBlock)%
+                                            </span>
+                                        </button>
+
+                                        @if (GetPercentageOfKnowledge(entriesBlock) < 75 && !showEntireCourse)
+                                        {
+                                            completedUnit = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                            </div>
+
+                            @if (!completedUnit && !showEntireCourse)
+                            {
+                                completedSection = false;
+                                break;
+                            }
+
+                            unitIndex++;
+                        }
+
+                        @if (!completedSection && !showEntireCourse) { break; }
+                        sectionIndex++;
+                    }
+                }
+            </div>
+        </div>
+
+        <ReadingComponent Entries="currentLesson"
+                          Images="imageList"
+                          Show="showCurrentLessonModal"
+                          SectionName="currentSectionName"
+                          UnitName="currentUnitName"
+                          OnClose="() => showCurrentLessonModal = false" />
+
+        <StudyComponent Entries="currentLesson"
+                        Show="showStudyModal"
+                        OnClose="() => showStudyModal = false"
+                        OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
+                        CurrentCourse="@currentCourse"
+                        currentSection="@currentSectionName"
+                        currentUnit="@currentUnitName" />
+
+
+    </Authorized>
+    <NotAuthorized>
+        <h3>Welcome to AnkiLingo!</h3>
+        <p>Please <a href="/account/login">log in</a> or <a href="/account/register">register</a> to start your language learning journey.</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private List<string> courseList = new List<string>();
+    private string errorMessage;
+    private CourseData currentCourse;
+    private List<EntryData> currentLesson = new List<EntryData>();
+    private List<ImageData> imageList = new List<ImageData>();
+    private string currentSectionName;
+    private string currentUnitName;
+    private bool showCurrentLessonModal = false;
+    private bool showStudyModal = false;
+    private bool showEntireCourse = false;
+
+    private List<string> BackgroundColours = new List<string>()
+    {
+        "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
+        "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
+    };
+
+    private UserData userData;
+
+    [Inject] public ICourseService courseService { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
+            userData = ExcelService.GetUserData(userDataFilePath);
+            courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
+
+            LoadCourseContent(userData.CurrentCourse);
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error fetching course list: {ex.Message}");
+            errorMessage = "Failed to load course list. Please check the console for details.";
+        }
+    }
+
+    protected void LoadCourseContent(string courseName)
+    {
+        try
+        {
+            var filePath = @"C:\temp\AnkiLingo";
+            var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
+            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+
+            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
+            {
+                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
+            }
+
+            //imageList = ExcelService.GetImages(currentCoursePath);
+            userData.CurrentCourse = courseName;
+            ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            //Handle exceptions, e.g., log them or show a message to the user
+            Console.WriteLine($"Error loading course content: {ex.Message}");
+            errorMessage = "Failed to load course content. Please check the console for details.";
+        }
+    }
+
+    protected void UpdateEntry(string value1, string value2, int levelOfKnowledge)
+    {
+        if (levelOfKnowledge > 10) levelOfKnowledge = 10;
+        if (levelOfKnowledge < 0) levelOfKnowledge = 0;
+
+        var filePath = @"C:\temp\AnkiLingo";
+        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
+        ExcelService.UpdateEntry(currentCoursePath, currentSectionName, currentUnitName, value1, value2, levelOfKnowledge);
+    }
+
+    protected void SetCurrentLesson(List<EntryData> entries, string sectionName, string unitName, bool study = false)
+    {
+        currentSectionName = sectionName;
+        currentUnitName = unitName;
+        currentLesson = entries;
+
+        //imageList = ExcelService.GetImages(@"C:\temp\AnkiLingo\" + currentCourse.Name + ".xlsx")
+        //    .Where(x => x.SectionName == sectionName && x.UnitName == unitName).ToList();
+
+        // get additional entries from the course
+        var filePath = @"C:\temp\AnkiLingo";
+        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
+
+        if (study)
+        {
+
+            var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
+           .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
+                       !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
+
+            /*
+              Initial Review: Ideally, you should review the material within 24 hours of first learning it.
+                              This helps solidify the information in your short-term memory.
+                              Subsequent Reviews: The intervals between subsequent reviews should gradually increase.
+                              A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on.
+                              However, you can adjust this based on how well you remember the material. If you're struggling,
+                              you can shorten the intervals. If you're easily remembering, you can lengthen them.
+
+                Here's a sample spaced repetition schedule:
+                    Day 1: Initial learning
+                    Day 2: First review
+                    Day 4: Second review
+                    Day 8: Third review
+                    Day 15: Fourth review
+                    Day 30: Fifth review
+             */
+            var entriesToAdd = new List<EntryData>();
+            // get entries that where reviewed 1 time and last reviewed more than 1 day ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
+            // get entries that where reviewed 2 times and last reviewed more than 3 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
+            // get entries that where reviewed 3 times and last reviewed more than 7 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
+            // get entries that where reviewed 4 times and last reviewed more than 14 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
+            // get entries that where reviewed 5 times and last reviewed more than 30 days ago
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
+
+            // oldest entries first
+            entriesToAdd = entriesToAdd.OrderBy(x => x.LastReviewed).ToList();
+
+            entries.AddRange(entriesToAdd.Take(10));
+            showStudyModal = true;
+        }
+        else
+        {
+            showCurrentLessonModal = true;
+        }
+
+        StateHasChanged();
+    }
+
+    protected int GetPercentageOfKnowledge(List<EntryData> entries)
+    {
+        if (entries == null || !entries.Any())
+        {
+            return 0;
+        }
+        var sumOfKnowledge = GetSumOfKnowledge(entries);
+        var maxPossibleKnowledge = GetMaxPossibleKnoledge(entries);
+        return (int)((double)sumOfKnowledge / maxPossibleKnowledge * 100);
+    }
+
+    protected int GetSumOfKnowledge(List<EntryData> entries)
+    {
+        if (entries == null || !entries.Any())
+        {
+            return 0;
+        }
+        return entries.Sum(e => e.LevelOfKnowledge);
+    }
+
+    protected int GetMaxPossibleKnoledge(List<EntryData> entries)
+    {
+        return entries.Count() * 10;
+    }
+}

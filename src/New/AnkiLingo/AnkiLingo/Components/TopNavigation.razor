@@ -1,0 +1,104 @@
+﻿@using AnkiLingoExcelService
+@using AnkiLingoExcelService.Data
+
+<div id="top-navigation-container">
+    <div class="top-nav">
+
+        @if (currentCourse != null)
+        {
+            <div class="top-nav-item" @onclick="ShowCourseList">
+                <img src=@currentCourseIconPath alt="Course" class="top-nav-icon" />
+                <span class="top-nav-value">@currentCourse.Name</span>
+            </div>
+        }
+        else
+        {
+            <div class="top-nav-item">
+                <img src="images/course.png" alt="Course" class="top-nav-icon" />
+                <span class="top-nav-value">Loading...</span>
+            </div>
+        }
+
+        @if (streakActive())
+        {
+            <div class="top-nav-item" @onclick="ShowStreak">
+                <img src="images/streak.png" alt="Streak" class="top-nav-icon" />
+                <span class="top-nav-value">@streakCount</span>
+            </div>
+        }
+        else
+        {
+            <div class="top-nav-item">
+                <img src="images/streak-non.png" alt="Flame" class="top-nav-icon" />
+                <span class="top-nav-value">@streakCount</span>
+            </div>
+        }
+
+        <div class="top-nav-item" @onclick="ShowGems">
+            <img src="images/gem.png" alt="Gems" class="top-nav-icon" />
+            <span class="top-nav-value">@gemsCount</span>
+        </div>
+        <div class="top-nav-item" @onclick="ShowXP">
+            <img src="images/train.png" alt="XP" class="top-nav-icon" />
+            <span class="top-nav-value">@xpCount</span>
+        </div>
+    </div>
+</div>
+
+@if (ShowCourseListDiv)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="background-color: white; border-radius: 10px;">
+            <h2>Available Courses</h2>
+            @if (courseList.Count > 0)
+            {
+                <ul class="course-list">
+                    @foreach (string course in courseList)
+                    {
+                        <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)">@course</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p>No courses available.</p>
+            }
+            <button class="close-button" @onclick="HideCourseList">Close</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int streakCount { get; set; }
+    [Parameter] public int gemsCount { get; set; }
+    [Parameter] public DateTime lastStudyDatetime { get; set; }
+    [Parameter] public int xpCount { get; set; }
+    [Parameter] public CourseData currentCourse { get; set; }
+    [Parameter] public List<string> courseList { get; set; } = new List<string>();
+
+    private bool streakActive() => (lastStudyDatetime > DateTime.Now.AddHours(-48));
+    private bool ShowCourseListDiv;
+
+    [Parameter] public EventCallback<string> OnCourseChanged { get; set; }
+
+    private string currentCourseIconPath => currentCourse != null ? $"images/icons/{currentCourse.Icon}.png" : "images/course.png";
+
+    void ShowStreak() { /* Reveal streak details below */ }
+    void ShowGems() { /* Reveal gems details below */ }
+    void ShowXP() { /* Reveal hearts details below */ }
+    void ShowCourseList()
+    {
+        ShowCourseListDiv = true;
+    }
+
+    void HideCourseList()
+    {
+        ShowCourseListDiv = false;
+    }
+
+    void SetCurrentCourse(string courseName)
+    {
+        OnCourseChanged.InvokeAsync(courseName);
+        HideCourseList();
+    }
+}

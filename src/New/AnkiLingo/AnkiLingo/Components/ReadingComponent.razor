@@ -1,0 +1,104 @@
+﻿@using AnkiLingo.Data
+@using AnkiLingoExcelService.Data
+
+@if (Show)
+{
+    <div class="modal-overlay">
+        <div class="modal-content" style="background-color: white; border-radius: 10px;">
+            <h2>@Title</h2>
+            <ul>
+                @foreach (var entry in Entries)
+                {
+                    <li>
+                        @switch (entry.LevelOfKnowledge)
+                        {
+                            case 0:
+                                <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 1:
+                                <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 2:
+                                <span class="badge bg-danger">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 3:
+                                <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 4:
+                                <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 5:
+                                <span class="badge bg-warning">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 6:
+                                <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 7:
+                                <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            case 8:
+                                <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                            default:
+                                <span class="badge bg-success">@entry.LevelOfKnowledge</span>
+                                ;
+                                break;
+                        }
+
+                        <strong>@entry.Value1</strong> - @entry.Value2
+                        <br /> Last Reviewed:
+                        @if (entry.LastReviewed.Year < 1900)
+                        {
+                            <small>never</small>
+                        }
+                        else
+                        {
+                            <small>@entry.LastReviewed.ToShortDateString()</small>
+                        }
+                    </li>
+                }
+            </ul>
+      
+            <ul>
+                @foreach (ImageData image in Images.Where(x => x.SectionName == SectionName && x.UnitName == UnitName))
+                {
+                    <li>
+                        <img src="images/@(image.ImageName).jpg" alt="Image" style="max-width: 200px; max-height: 200px;" />
+                        <br />
+                        <small>@image.ImageName</small>
+                    </li>
+                }
+            </ul>
+            <button class="btn btn-primary w-25" @onclick="CloseModal">Close</button>
+        </div>       
+    </div>
+}
+
+@code {
+    [Parameter] public string Title { get; set; } = "Reading Lessons Content";
+    [Parameter] public List<EntryData> Entries { get; set; } = new List<EntryData>();
+    [Parameter] public List<ImageData> Images { get; set; } = new List<ImageData>();
+    [Parameter] public string SectionName { get; set; } = string.Empty;
+    [Parameter] public string UnitName { get; set; } = string.Empty;
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private void CloseModal()
+    {
+        Show = false;
+        StateHasChanged();
+        if (OnClose.HasDelegate)
+        {
+            OnClose.InvokeAsync();
+        }
+    }
+}
