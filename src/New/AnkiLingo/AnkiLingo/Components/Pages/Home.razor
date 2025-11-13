@@ -2,33 +2,41 @@
 @rendermode InteractiveServer
 @using AnkiLingo.Data
 @using AnkiLingo.Services
+@using AnkiLingoBackendService
 @using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>AnkiLingo</PageTitle>
 
 <AuthorizeView>
     <Authorized>
-        <TopNavigation currentCourse="currentCourse"
-                       courseList="courseList"
-                       gemsCount="userData.GemsCount"
-                       streakCount="userData.StreakLength"
-                       xpCount="userData.XPCount"
-                       OnCourseChanged="LoadCourseContent"
-                       lastStudyDatetime="userData.LastStudy" />
+
+        @if (!isLoading)
+        {
+            <TopNavigation currentCourse="currentCourse"
+                           courseList="courseList"
+                           gemsCount="userData.GemsCount"
+                           streakCount="userData.StreakLength"
+                           xpCount="userData.XPCount"
+                           OnCourseChanged="LoadCourseContent"
+                           lastStudyDatetime="userData.LastStudy" />
+        }
 
         <div class="d-flex flex-row gap-3">
             <SiteNavigation />
 
             <div id="course-content" class="w-75">
 
-                @if (currentCourse == null)
-                {
-                    <p>Loading...</p>
-                }
-                else if (!string.IsNullOrEmpty(errorMessage))
+                @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <p class="text-danger">@errorMessage</p>
+                }
+
+                @if (isLoading)
+                {
+                    <p>Loading...</p>
                 }
                 else
                 {
@@ -112,25 +120,24 @@
                         @if (!completedSection && !showEntireCourse) { break; }
                         sectionIndex++;
                     }
+
+                    <ReadingComponent Entries="currentLesson"
+                                      Images="imageList"
+                                      Show="showCurrentLessonModal"
+                                      SectionName="currentSectionName"
+                                      UnitName="currentUnitName"
+                                      OnClose="() => showCurrentLessonModal = false" />
+
+                    <StudyComponent Entries="currentLesson"
+                                    Show="showStudyModal"
+                                    OnClose="() => showStudyModal = false"
+                                    OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
+                                    CurrentCourse="@currentCourse"
+                                    currentSection="@currentSectionName"
+                                    currentUnit="@currentUnitName" />
                 }
             </div>
         </div>
-
-        <ReadingComponent Entries="currentLesson"
-                          Images="imageList"
-                          Show="showCurrentLessonModal"
-                          SectionName="currentSectionName"
-                          UnitName="currentUnitName"
-                          OnClose="() => showCurrentLessonModal = false" />
-
-        <StudyComponent Entries="currentLesson"
-                        Show="showStudyModal"
-                        OnClose="() => showStudyModal = false"
-                        OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
-                        CurrentCourse="@currentCourse"
-                        currentSection="@currentSectionName"
-                        currentUnit="@currentUnitName" />
-
 
     </Authorized>
     <NotAuthorized>
@@ -141,7 +148,7 @@
 
 @code {
     private List<string> courseList = new List<string>();
-    private string errorMessage;
+    private string errorMessage = string.Empty;
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
     private List<ImageData> imageList = new List<ImageData>();
@@ -150,6 +157,7 @@
     private bool showCurrentLessonModal = false;
     private bool showStudyModal = false;
     private bool showEntireCourse = false;
+    private bool isLoading = true;
 
     private List<string> BackgroundColours = new List<string>()
     {
@@ -160,20 +168,19 @@
     private UserData userData;
 
     [Inject] public ICourseService courseService { get; set; }
+    [Inject] public IDatabaseService databaseService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
-            userData = ExcelService.GetUserData(userDataFilePath);
+            await LoadUserData();
             courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
-
             LoadCourseContent(userData.CurrentCourse);
+            isLoading = false;
         }
         catch (Exception ex)
         {
-            // Handle exceptions, e.g., log them or show a message to the user
             Console.WriteLine($"Error fetching course list: {ex.Message}");
             errorMessage = "Failed to load course list. Please check the console for details.";
         }
@@ -236,7 +243,7 @@
                        !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
 
             /*
-              Initial Review: Ideally, you should review the material within 24 hours of first learning it.
+            Initial Review: Ideally, you should review the material within 24 hours of first learning it.
                               This helps solidify the information in your short-term memory.
                               Subsequent Reviews: The intervals between subsequent reviews should gradually increase.
                               A common pattern is to review after 1 day, then 3 days, then 7 days, then 14 days, and so on.
@@ -300,5 +307,32 @@
     protected int GetMaxPossibleKnoledge(List<EntryData> entries)
     {
         return entries.Count() * 10;
+    }
+
+    private async Task LoadUserData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated ?? false)
+        {
+            // Try common claim names for user id
+            var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)
+                          ?? user.FindFirst("sub")
+                          ?? user.FindFirst(ClaimTypes.Name);
+
+            if (idClaim != null && Guid.TryParse(idClaim.Value, out var userId))
+            {
+                userData = await databaseService.GetUserData(userId);
+            }
+            else
+            {
+                errorMessage = "Unable to determine numeric user id from authentication claims.";
+            }
+        }
+        else
+        {
+            errorMessage = "User is not authenticated.";
+        }
     }
 }

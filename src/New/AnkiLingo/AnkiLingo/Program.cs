@@ -3,6 +3,7 @@ using AnkiLingo.Components.Account;
 using AnkiLingo.Data;
 using AnkiLingo.Services;
 using AnkiLingo.Services.Repositories;
+using AnkiLingoBackendService;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,8 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddScoped<ICourseRepository, CourseRepository>();
 builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<IUserDataRepository, UserDataRepository>();
+builder.Services.AddScoped<IDatabaseService, DatabaseService>();
 
 builder.Services.AddAuthentication(options =>
     {
