@@ -147,7 +147,7 @@
 </AuthorizeView>
 
 @code {
-    private List<string> courseList = new List<string>();
+    private IEnumerable<string> courseList = new List<string>();
     private string errorMessage = string.Empty;
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
@@ -175,7 +175,7 @@
         try
         {
             await LoadUserData();
-            courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
+            courseList = await databaseService.GetCourseNames();
             LoadCourseContent(userData.CurrentCourse);
             isLoading = false;
         }

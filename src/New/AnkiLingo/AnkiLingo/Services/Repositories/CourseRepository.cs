@@ -1,4 +1,5 @@
 ﻿using AnkiLingo.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace AnkiLingo.Services.Repositories
 {
@@ -8,6 +9,7 @@ namespace AnkiLingo.Services.Repositories
     public interface ICourseRepository
     {
         IEnumerable<Course> GetAllCourses();
+        Task<IEnumerable<string>> GetCourseNamesAsync();
         Course GetCourseById(int id);
         Course GetCourseByName(string courseName);
         void AddCourse(Course course);
@@ -27,6 +29,12 @@ namespace AnkiLingo.Services.Repositories
         public IEnumerable<Course> GetAllCourses()
         {
             return _dbContext.Courses.ToList();
+        }
+
+        public async Task<IEnumerable<string>> GetCourseNamesAsync()
+        {
+            var data = await _dbContext.Courses.Select(c => c.Name).ToListAsync();
+            return data;
         }
 
         public Course GetCourseById(int id)

@@ -1,5 +1,6 @@
 ﻿@using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
+@using Microsoft.AspNetCore.Components.Forms
 
 <div id="top-navigation-container">
     <div class="top-nav">
@@ -50,19 +51,27 @@
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
             <h2>Available Courses</h2>
-            @if (courseList.Count > 0)
-            {
-                <ul class="course-list">
-                    @foreach (string course in courseList)
+
+            <ul class="course-list">
+                @if (courseList != null && courseList.Count() > 0)
+                {
+                    @foreach (string course in courseList.ToList())
                     {
                         <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)">@course</li>
                     }
-                </ul>
-            }
-            else
+                }
+                <li class="course-list-entry" @onclick="AddNewCourse">Add New Course</li>
+            </ul>
+
+            @if (ShowAddCourseDiv)
             {
-                <p>No courses available.</p>
+                <h3>Add New Course</h3>
+                <p>upload an excel file with a valid structure for the course information</p>
+                <InputFile OnChange="OnCourseFileChange" />
+                <button @onclick="UploadCourseFile">Upload</button>
+                <button @onclick="() => ShowAddCourseDiv = false">Cancel</button>
             }
+
             <button class="close-button" @onclick="HideCourseList">Close</button>
         </div>
     </div>
@@ -74,10 +83,12 @@
     [Parameter] public DateTime lastStudyDatetime { get; set; }
     [Parameter] public int xpCount { get; set; }
     [Parameter] public CourseData currentCourse { get; set; }
-    [Parameter] public List<string> courseList { get; set; } = new List<string>();
+    [Parameter] public IEnumerable<string> courseList { get; set; } = new List<string>();
 
     private bool streakActive() => (lastStudyDatetime > DateTime.Now.AddHours(-48));
     private bool ShowCourseListDiv;
+    private bool ShowAddCourseDiv = false;
+    private IBrowserFile? courseFile;
 
     [Parameter] public EventCallback<string> OnCourseChanged { get; set; }
 
@@ -100,5 +111,25 @@
     {
         OnCourseChanged.InvokeAsync(courseName);
         HideCourseList();
+    }
+
+    void AddNewCourse()
+    {
+        ShowAddCourseDiv = true;
+        StateHasChanged();
+    }
+
+    void OnCourseFileChange(InputFileChangeEventArgs e)
+    {
+        courseFile = e.File;
+    }
+
+    void UploadCourseFile()
+    {
+        // check if file is selected
+        if (courseFile != null)
+        {
+           
+        }
     }
 }
