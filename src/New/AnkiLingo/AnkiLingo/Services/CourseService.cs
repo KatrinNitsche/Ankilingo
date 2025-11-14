@@ -6,7 +6,7 @@ namespace AnkiLingo.Services
     public interface ICourseService
     {
         IEnumerable<Course> GetAllCourses();
-        Course GetCourseById(int id);
+        Task<Course> GetCourseById(int id);
         bool AddCourse(Course course);
         bool UpdateCourse(Course course);
         bool DeleteCourse(int id);
@@ -28,9 +28,9 @@ namespace AnkiLingo.Services
             return _courseRepository.GetAllCourses();
         }
 
-        public Course GetCourseById(int id)
+        public async Task<Course> GetCourseById(int id)
         {
-            return _courseRepository.GetCourseById(id);
+            return await _courseRepository.GetCourseById(id);
         }
         public bool AddCourse(Course course)
         {

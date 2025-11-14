@@ -174,9 +174,14 @@
     {
         try
         {
-            await LoadUserData();
             courseList = await databaseService.GetCourseNames();
-            LoadCourseContent(userData.CurrentCourse);
+            await LoadUserData();
+           
+            if (userData != null)
+            {
+                LoadCourseContent(userData.CurrentCourse);
+            }
+                       
             isLoading = false;
         }
         catch (Exception ex)

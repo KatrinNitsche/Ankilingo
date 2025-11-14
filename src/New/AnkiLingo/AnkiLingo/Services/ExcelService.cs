@@ -1,10 +1,90 @@
 ﻿using AnkiLingoExcelService.Data;
 using ClosedXML.Excel;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace AnkiLingoExcelService
 {
     public static class ExcelService
     {
+        public static CourseData LoadCourseFromExcel(IBrowserFile? file)
+        {
+            if (file == null)
+            {
+                Console.WriteLine("No file provided.");
+                return new CourseData();
+            }
+            using var stream = file.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1); // 1-based index for the first worksheet
+            var courseData = new CourseData
+            {
+                Name = worksheet.Cell("B1").GetValue<string>(),
+                Description = worksheet.Cell("B2").GetValue<string>(),
+                Icon = worksheet.Cell("B3").GetValue<string>()
+            };
+            // add sections to the course data
+            int row = 6;
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
+                var sectionDescription = worksheet.Cell($"B{row}").GetValue<string>();
+                if (!string.IsNullOrEmpty(sectionName) && sectionName != "Sections")
+                {
+                    worksheet = workbook.Worksheet(sectionName); // 1-based index for the first worksheet
+                    var section = new SectionData
+                    {
+                        Name = sectionName,
+                        Units = new List<UnitData>(),
+                    };
+
+                    int sectionRow = 1;
+                    while (!worksheet.Cell($"A{sectionRow}").IsEmpty())
+                    {
+                        var unit = new UnitData
+                        {
+                            Name = worksheet.Cell($"A{sectionRow}").GetValue<string>(),
+                            Description = worksheet.Cell($"B{sectionRow}").GetValue<string>()
+                        };
+                        section.Units.Add(unit);
+                        sectionRow++;
+                    }
+
+                    sectionRow += 2; // Skip the next 2 row for entries (empty row and header row)
+
+                    // the following rows contain the entries for the units A1 - unit name, B1 - value 1, B1 - value 2
+                    while (!worksheet.Cell($"A{sectionRow}").IsEmpty())
+                    {
+                        var value1 = worksheet.Cell($"B{sectionRow}").GetValue<string>();
+                        var value2 = worksheet.Cell($"C{sectionRow}").GetValue<string>();
+                        var levelOfKnowledge = worksheet.Cell($"D{sectionRow}").GetValue<int>();
+                        var lastReviewed = worksheet.Cell($"E{sectionRow}").GetValue<DateTime>();
+                        var reviewCount = worksheet.Cell($"F{sectionRow}").GetValue<int>();
+
+                        var entry = new EntryData
+                        {
+                            LastReviewed = lastReviewed,
+                            LevelOfKnowledge = levelOfKnowledge,
+                            ReviewCount = reviewCount,
+                            Value1 = value1,
+                            Value2 = value2
+                        };
+
+                        // Find the unit for this entry
+                        var unitName = worksheet.Cell($"A{sectionRow}").GetValue<string>();
+                        var unit = section.Units.FirstOrDefault(u => u.Name == unitName);
+                        if (unit != null)
+                        {
+                            unit.Entries.Add(entry);
+                        }
+                        sectionRow++;
+                    }
+                }
+                row++;
+            }
+            return courseData;
+        }
+
+
         /// <summary>
         /// returns the list of excel file names in the given directory
         /// </summary>

@@ -1,4 +1,6 @@
-﻿@using AnkiLingoExcelService
+﻿@using AnkiLingo.Data
+@using AnkiLingoBackendService
+@using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
 @using Microsoft.AspNetCore.Components.Forms
 
@@ -65,11 +67,13 @@
 
             @if (ShowAddCourseDiv)
             {
-                <h3>Add New Course</h3>
-                <p>upload an excel file with a valid structure for the course information</p>
-                <InputFile OnChange="OnCourseFileChange" />
-                <button @onclick="UploadCourseFile">Upload</button>
-                <button @onclick="() => ShowAddCourseDiv = false">Cancel</button>
+                <div class="border w-50 m-auto">
+                    <h3>Add New Course</h3>
+                    <p>upload an excel file with a valid structure for the course information</p>
+                    <InputFile OnChange="OnCourseFileChange" />
+                    <button class="btn btn-primary" @onclick="UploadCourseFile">Upload</button>
+                    <button class="btn btn-secondary" @onclick="() => ShowAddCourseDiv = false">Cancel</button>
+                </div>
             }
 
             <button class="close-button" @onclick="HideCourseList">Close</button>
@@ -91,7 +95,7 @@
     private IBrowserFile? courseFile;
 
     [Parameter] public EventCallback<string> OnCourseChanged { get; set; }
-
+    [Inject] public IDatabaseService databaseService { get; set; }
     private string currentCourseIconPath => currentCourse != null ? $"images/icons/{currentCourse.Icon}.png" : "images/course.png";
 
     void ShowStreak() { /* Reveal streak details below */ }
@@ -124,12 +128,56 @@
         courseFile = e.File;
     }
 
-    void UploadCourseFile()
+    async Task UploadCourseFile()
     {
         // check if file is selected
         if (courseFile != null)
         {
-           
+            var courseData = ExcelService.LoadCourseFromExcel(courseFile);
+            if (courseData != null)
+            {
+                var sectionList = new List<Section>();
+                foreach (var section in courseData.Sections)
+                {
+                    var newSection = new Section
+                    {
+                        Name = section.Name,
+                        Created = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Units = section.Units.Select(u => new Unit
+                        {
+                            Name = u.Name,
+                            Created = DateTime.Now,
+                            Updated = DateTime.Now,
+                            Entries = u.Entries.Select(e => new AnkiLingo.Data.Entry
+                            {
+                                Name = e.Value1,
+                                Value1 = e.Value1,
+                                Value2 = e.Value2,
+                                Description = e.Value1,
+                                Created = DateTime.Now,
+                                Updated = DateTime.Now
+                            }).ToList()
+                        }).ToList()
+                    };
+                    sectionList.Add(newSection);
+                }
+
+                var courseToAdd = new Course
+                {
+                    Name = courseData.Name,
+                    Icon = courseData.Icon,
+                    Description = courseData.Description,
+                    Created = DateTime.Now,
+                    Updated = DateTime.Now,
+                    Sections = sectionList
+                };
+
+                await databaseService.AddCourse(courseToAdd);
+                await OnCourseChanged.InvokeAsync(courseToAdd.Name);
+                ShowAddCourseDiv = false;
+                HideCourseList();
+            }
         }
     }
 }

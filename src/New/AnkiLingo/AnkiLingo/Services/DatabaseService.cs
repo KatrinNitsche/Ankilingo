@@ -9,6 +9,7 @@ namespace AnkiLingoBackendService
     {
         Task<UserData> GetUserData(Guid userId);
         Task<IEnumerable<string>> GetCourseNames();
+        Task<bool> AddCourse(Course course);
     }
 
     public class DatabaseService : IDatabaseService
@@ -22,6 +23,20 @@ namespace AnkiLingoBackendService
             this.userDataRepository = userDataRepository;
             this.courseRepository = courseRepository;
             _logger = logger;
+        }
+
+        public async Task<bool> AddCourse(Course course)
+        {
+            try
+            {
+                await courseRepository.AddCourse(course);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding course: {CourseName}", course.Name);
+                return false;
+            }
         }
 
         public async Task<UserData> GetUserData(Guid userId)

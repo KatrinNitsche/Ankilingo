@@ -10,11 +10,11 @@ namespace AnkiLingo.Services.Repositories
     {
         IEnumerable<Course> GetAllCourses();
         Task<IEnumerable<string>> GetCourseNamesAsync();
-        Course GetCourseById(int id);
-        Course GetCourseByName(string courseName);
-        void AddCourse(Course course);
-        void UpdateCourse(Course course);
-        void DeleteCourse(int id);
+        Task<Course> GetCourseById(int id);
+        Task<Course> GetCourseByName(string courseName);
+        Task<bool> AddCourse(Course course);
+        Task<bool> UpdateCourse(Course course);
+        Task<bool> DeleteCourse(int id);
     }
 
     public class CourseRepository : ICourseRepository
@@ -37,12 +37,12 @@ namespace AnkiLingo.Services.Repositories
             return data;
         }
 
-        public Course GetCourseById(int id)
+        public async Task<Course> GetCourseById(int id)
         {
-            return _dbContext.Courses.Find(id);
+            return await _dbContext.Courses.FindAsync(id);
         }
 
-        public Course GetCourseByName(string courseName)
+        public async Task<Course> GetCourseByName(string courseName)
         {
             if (string.IsNullOrWhiteSpace(courseName))
                 return null;
@@ -50,32 +50,37 @@ namespace AnkiLingo.Services.Repositories
             // Normalize the search term once on the client; EF will translate c.Name.ToUpper() to SQL UPPER(c.Name).
             var normalized = courseName.ToUpper();
             return _dbContext.Courses.FirstOrDefault(c => c.Name != null && c.Name.ToUpper() == normalized);
-        }
+        }   
 
-        public void AddCourse(Course course)
-        {
+        public async Task<bool> AddCourse(Course course)
+        {   
             _dbContext.Courses.Add(course);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
+            return true;
         }
 
-        public void UpdateCourse(Course course)
+        public async Task<bool> UpdateCourse(Course course)
         {
-            var existingCourse = GetCourseById(course.Id);
+            var existingCourse = await GetCourseById(course.Id);
             if (existingCourse != null)
             {
                 _dbContext.Entry(existingCourse).CurrentValues.SetValues(course);
-                _dbContext.SaveChanges();
+                await _dbContext.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
 
-        public void DeleteCourse(int id)
+        public async Task<bool> DeleteCourse(int id)
         {
-            var course = GetCourseById(id);
+            var course = await GetCourseById(id);
             if (course != null)
             {
                 _dbContext.Courses.Remove(course);
-                _dbContext.SaveChanges();
+                await _dbContext.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
     }
 }
