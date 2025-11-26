@@ -26,6 +26,10 @@
 
     public class EntryData
     {
+        public int CourseId { get; set; }
+        public int SectionId { get; set; }
+        public int UnitId { get; set; }
+        public int id { get; set; }
         public string Value1 { get; set; }
         public string Value2 { get; set; }
         public int LevelOfKnowledge { get; set; }

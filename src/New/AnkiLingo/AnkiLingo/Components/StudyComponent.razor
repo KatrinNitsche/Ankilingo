@@ -287,7 +287,7 @@
             {
                 Value1 = entry.Value1,
                 Value2 = entry.Value2,
-
+                EntryData = entry,
                 QuestionText = questionText,
                 AnswerText = answerText,
                 LevelOfKnowledge = entry.LevelOfKnowledge,
@@ -346,6 +346,10 @@
             {
                 Value1 = currentQuestion.Value1,
                 Value2 = currentQuestion.Value2,
+                CourseId = currentQuestion.EntryData.CourseId,
+                SectionId = currentQuestion.EntryData.SectionId,
+                UnitId = currentQuestion.EntryData.UnitId,
+                ReviewCount = currentQuestion.EntryData.ReviewCount,
                 LevelOfKnowledge = currentQuestion.LevelOfKnowledge + 1,
                 LastReviewed = DateTime.Now
             });
@@ -361,6 +365,10 @@
             {
                 Value1 = currentQuestion.Value1,
                 Value2 = currentQuestion.Value2,
+                CourseId = currentQuestion.EntryData.CourseId,
+                SectionId = currentQuestion.EntryData.SectionId,
+                UnitId = currentQuestion.EntryData.UnitId,
+                ReviewCount = currentQuestion.EntryData.ReviewCount,
                 LevelOfKnowledge = Math.Max(currentQuestion.LevelOfKnowledge - 1, 0),
                 LastReviewed = DateTime.Now
             });
@@ -434,6 +442,10 @@
             {
                 Value1 = Value1Entry,
                 Value2 = Value2Entry,
+                CourseId = currentEntry.CourseId,
+                SectionId = currentEntry.SectionId,
+                UnitId = currentEntry.UnitId,
+                ReviewCount = currentEntry.ReviewCount,
                 LevelOfKnowledge = currentEntry.LevelOfKnowledge + 1,
                 LastReviewed = DateTime.Now
             });
@@ -448,6 +460,10 @@
             {
                 Value1 = Value1Entry,
                 Value2 = Value2Entry,
+                CourseId = currentEntry.CourseId,
+                SectionId = currentEntry.SectionId,
+                UnitId = currentEntry.UnitId,
+                ReviewCount = currentEntry.ReviewCount,
                 LevelOfKnowledge = Math.Max(currentEntry.LevelOfKnowledge - 1, 0),
                 LastReviewed = DateTime.Now
             });

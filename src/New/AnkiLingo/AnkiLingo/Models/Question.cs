@@ -20,6 +20,7 @@ namespace AnkiLingoApp.Models
         public string Value2 { get; set; }
         #endregion 
 
+        public EntryData EntryData { get; set; }
         public string QuestionText { get; set; }
         public string AnswerText { get; set; }
         public int LevelOfKnowledge { get; set; }

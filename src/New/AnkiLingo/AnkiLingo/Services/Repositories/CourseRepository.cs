@@ -44,16 +44,15 @@ namespace AnkiLingo.Services.Repositories
 
         public async Task<Course> GetCourseByName(string courseName)
         {
-            if (string.IsNullOrWhiteSpace(courseName))
-                return null;
-
-            // Normalize the search term once on the client; EF will translate c.Name.ToUpper() to SQL UPPER(c.Name).
-            var normalized = courseName.ToUpper();
-            return _dbContext.Courses.FirstOrDefault(c => c.Name != null && c.Name.ToUpper() == normalized);
-        }   
+            if (string.IsNullOrWhiteSpace(courseName)) return null;
+            return _dbContext.Courses.Include(x => x.Sections)
+                .ThenInclude(x => x.Units)
+                .ThenInclude(x => x.Entries)
+                .FirstOrDefault(c => c.Name != null && c.Name == courseName);
+        }
 
         public async Task<bool> AddCourse(Course course)
-        {   
+        {
             _dbContext.Courses.Add(course);
             await _dbContext.SaveChangesAsync();
             return true;

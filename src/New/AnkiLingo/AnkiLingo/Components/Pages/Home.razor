@@ -34,7 +34,7 @@
                     <p class="text-danger">@errorMessage</p>
                 }
 
-                @if (isLoading)
+                @if (isLoading || currentCourse == null)
                 {
                     <p>Loading...</p>
                 }
@@ -131,7 +131,7 @@
                     <StudyComponent Entries="currentLesson"
                                     Show="showStudyModal"
                                     OnClose="() => showStudyModal = false"
-                                    OnUpdateEntry="(entry) => UpdateEntry(entry.Value1, entry.Value2, entry.LevelOfKnowledge)"
+                                    OnUpdateEntry="(entry) => UpdateEntry(entry)"
                                     CurrentCourse="@currentCourse"
                                     currentSection="@currentSectionName"
                                     currentUnit="@currentUnitName" />
@@ -191,22 +191,17 @@
         }
     }
 
-    protected void LoadCourseContent(string courseName)
+    protected async Task LoadCourseContent(string courseName)
     {
         try
         {
-            var filePath = @"C:\temp\AnkiLingo";
-            var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
-            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+            currentCourse = await databaseService.GetCourseContent(userData.UserId, userData.CurrentCourse);
 
             foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
             {
                 unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
             }
-
-            //imageList = ExcelService.GetImages(currentCoursePath);
-            userData.CurrentCourse = courseName;
-            ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
+           
             StateHasChanged();
         }
         catch (Exception ex)
@@ -217,14 +212,11 @@
         }
     }
 
-    protected void UpdateEntry(string value1, string value2, int levelOfKnowledge)
+    protected void UpdateEntry(EntryData entry)
     {
-        if (levelOfKnowledge > 10) levelOfKnowledge = 10;
-        if (levelOfKnowledge < 0) levelOfKnowledge = 0;
-
-        var filePath = @"C:\temp\AnkiLingo";
-        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
-        ExcelService.UpdateEntry(currentCoursePath, currentSectionName, currentUnitName, value1, value2, levelOfKnowledge);
+        if (entry.LevelOfKnowledge > 10) entry.LevelOfKnowledge = 10;
+        if (entry.LevelOfKnowledge < 0) entry.LevelOfKnowledge = 0;
+        databaseService.UpdateEntry(userData.UserId, entry);
     }
 
     protected void SetCurrentLesson(List<EntryData> entries, string sectionName, string unitName, bool study = false)
@@ -233,19 +225,12 @@
         currentUnitName = unitName;
         currentLesson = entries;
 
-        //imageList = ExcelService.GetImages(@"C:\temp\AnkiLingo\" + currentCourse.Name + ".xlsx")
-        //    .Where(x => x.SectionName == sectionName && x.UnitName == unitName).ToList();
-
-        // get additional entries from the course
-        var filePath = @"C:\temp\AnkiLingo";
-        var currentCoursePath = $"{filePath}\\{currentCourse.Name}.xlsx";
-
         if (study)
         {
 
-            var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
-           .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
-                       !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
+           //  var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
+           // .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
+           //             !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
 
             /*
             Initial Review: Ideally, you should review the material within 24 hours of first learning it.
@@ -265,15 +250,15 @@
              */
             var entriesToAdd = new List<EntryData>();
             // get entries that where reviewed 1 time and last reviewed more than 1 day ago
-            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
+           // entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
             // get entries that where reviewed 2 times and last reviewed more than 3 days ago
-            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
+            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
             // get entries that where reviewed 3 times and last reviewed more than 7 days ago
-            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
+            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
             // get entries that where reviewed 4 times and last reviewed more than 14 days ago
-            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
+            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
             // get entries that where reviewed 5 times and last reviewed more than 30 days ago
-            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
+            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
 
             // oldest entries first
             entriesToAdd = entriesToAdd.OrderBy(x => x.LastReviewed).ToList();
