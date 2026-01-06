@@ -8,7 +8,7 @@ namespace AnkiLingoExcelService.Data
         public Guid UserId { get; set; }
         public int StreakLength { get; set; }
         public int GemsCount { get; set; }
-        public string CurrentCourse { get; set; }
+        public string? CurrentCourse { get; set; } 
         public int XPCount { get; set; }
         public DateTime LastStudy { get; set; } = DateTime.MinValue;
     }
@@ -16,12 +16,12 @@ namespace AnkiLingoExcelService.Data
     public class UserCourseData
     {
         [Key]
-        public int Id { get; set; }
-        public int CourseId { get; set; }
+        public Guid Id { get; set; }
+        public Guid CourseId { get; set; }
         public Guid UserId { get; set; }
-        public int SectionId { get; set; }
-        public int UnitId { get; set; }
-        public int EntryId { get; set; }
+        public Guid SectionId { get; set; }
+        public Guid UnitId { get; set; }
+        public Guid EntryId { get; set; }
         public int LevelOfKnowledge { get; set; }
         public DateTime LastReviewed { get; set; }
         public int ReviewCount { get; set; } = 0;

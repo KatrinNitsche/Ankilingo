@@ -12,8 +12,12 @@
 
 <AuthorizeView>
     <Authorized>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <p class="text-danger">@errorMessage</p>
+        }
 
-        @if (!isLoading)
+        @if (!isLoading && currentCourse != null)
         {
             <TopNavigation currentCourse="currentCourse"
                            courseList="courseList"
@@ -28,11 +32,6 @@
             <SiteNavigation />
 
             <div id="course-content" class="w-75">
-
-                @if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    <p class="text-danger">@errorMessage</p>
-                }
 
                 @if (isLoading || currentCourse == null)
                 {
@@ -176,18 +175,19 @@
         {
             courseList = await databaseService.GetCourseNames();
             await LoadUserData();
-           
+
             if (userData != null)
             {
                 LoadCourseContent(userData.CurrentCourse);
             }
-                       
+
             isLoading = false;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error fetching course list: {ex.Message}");
-            errorMessage = "Failed to load course list. Please check the console for details.";
+            errorMessage = "Failed to load course list. Please check the console for details." + ex.Message;
+            StateHasChanged();
         }
     }
 
@@ -196,26 +196,35 @@
         try
         {
             currentCourse = await databaseService.GetCourseContent(userData.UserId, userData.CurrentCourse);
+            await databaseService.UpdateUserData(userData.UserId, courseName);
 
             foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
             {
                 unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
             }
-           
+
             StateHasChanged();
         }
         catch (Exception ex)
         {
             //Handle exceptions, e.g., log them or show a message to the user
             Console.WriteLine($"Error loading course content: {ex.Message}");
-            errorMessage = "Failed to load course content. Please check the console for details.";
+            errorMessage = "Failed to load course content. Please check the console for details." + ex.Message;
+            StateHasChanged();
         }
     }
 
     protected void UpdateEntry(EntryData entry)
     {
+        entry.ReviewCount += 1;
+        entry.LastReviewed = DateTime.Now;
+
+        if (entry.ReviewCount > 5) entry.ReviewCount = 5; // cap review count at 5
+
+        // cap level of knowledge between 0 and 10
         if (entry.LevelOfKnowledge > 10) entry.LevelOfKnowledge = 10;
         if (entry.LevelOfKnowledge < 0) entry.LevelOfKnowledge = 0;
+
         databaseService.UpdateEntry(userData.UserId, entry);
     }
 
@@ -228,9 +237,9 @@
         if (study)
         {
 
-           //  var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
-           // .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
-           //             !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
+            //  var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
+            // .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
+            //             !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
 
             /*
             Initial Review: Ideally, you should review the material within 24 hours of first learning it.
@@ -250,7 +259,7 @@
              */
             var entriesToAdd = new List<EntryData>();
             // get entries that where reviewed 1 time and last reviewed more than 1 day ago
-           // entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
+            // entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
             // get entries that where reviewed 2 times and last reviewed more than 3 days ago
             //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
             // get entries that where reviewed 3 times and last reviewed more than 7 days ago

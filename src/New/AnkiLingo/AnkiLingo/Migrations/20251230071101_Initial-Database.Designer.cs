@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AnkiLingo.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251111065907_AddCourseTables")]
-    partial class AddCourseTables
+    [Migration("20251230071101_Initial-Database")]
+    partial class InitialDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -92,11 +92,9 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.Course", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -122,11 +120,9 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.Entry", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -139,8 +135,8 @@ namespace AnkiLingo.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int>("UnitId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime2");
@@ -162,14 +158,12 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.Section", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -194,11 +188,9 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.Unit", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
@@ -211,8 +203,8 @@ namespace AnkiLingo.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int>("SectionId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime2");
@@ -222,6 +214,67 @@ namespace AnkiLingo.Migrations
                     b.HasIndex("SectionId");
 
                     b.ToTable("Units");
+                });
+
+            modelBuilder.Entity("AnkiLingoExcelService.Data.UserCourseData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("EntryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("LastReviewed")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LevelOfKnowledge")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UnitId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserCourseData");
+                });
+
+            modelBuilder.Entity("AnkiLingoExcelService.Data.UserData", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CurrentCourse")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GemsCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LastStudy")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StreakLength")
+                        .HasColumnType("int");
+
+                    b.Property<int>("XPCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserData");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

@@ -141,7 +141,7 @@
 </div>
 
 @code {
-    private List<string> courseList = new List<string>();
+    private IEnumerable<string> courseList = new List<string>();
     private List<EntryData> Entries { get; set; } = new List<EntryData>();
     private List<EntryData> StudyContent { get; set; } = new List<EntryData>();
     private string errorMessage;
@@ -173,11 +173,9 @@
     {
         try
         {
-            var userDataFilePath = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
-            userData = ExcelService.GetUserData(userDataFilePath);
-            courseList = ExcelService.GetCourseNames(@"C:\temp\AnkiLingo");
+            courseList = await databaseService.GetCourseNames();
             selectedCourse = userData.CurrentCourse;
-            LoadCourseContent(userData.CurrentCourse);
+            await LoadCourseContent(userData.CurrentCourse);
         }
         catch (Exception ex)
         {
@@ -187,19 +185,17 @@
         }
     }
 
-    protected void FilterContent()
+    protected async Task FilterContent()
     {
         Entries.Clear();
-        LoadCourseContent(selectedCourse);
+        await LoadCourseContent(selectedCourse);
     }
 
-    protected void LoadCourseContent(string courseName)
+    protected async Task LoadCourseContent(string courseName)
     {
         try
         {
-            var filePath = @"C:\temp\AnkiLingo";
-            var currentCoursePath = $"{filePath}\\{courseName}.xlsx";
-            currentCourse = ExcelService.GetCourseDetails(currentCoursePath);
+            currentCourse = await databaseService.GetCourseDetails(userData.UserId, selectedCourse);
 
             foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
             {
@@ -228,7 +224,6 @@
                 }
             }
 
-            ExcelService.UpdateUserData(@"C:\temp\AnkiLingo\Data\UserData.xlsx", userData);
             StateHasChanged();
         }
         catch (Exception ex)

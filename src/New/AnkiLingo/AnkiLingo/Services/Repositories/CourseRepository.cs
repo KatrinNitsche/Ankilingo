@@ -10,11 +10,11 @@ namespace AnkiLingo.Services.Repositories
     {
         IEnumerable<Course> GetAllCourses();
         Task<IEnumerable<string>> GetCourseNamesAsync();
-        Task<Course> GetCourseById(int id);
+        Task<Course> GetCourseById(Guid id);
         Task<Course> GetCourseByName(string courseName);
         Task<bool> AddCourse(Course course);
         Task<bool> UpdateCourse(Course course);
-        Task<bool> DeleteCourse(int id);
+        Task<bool> DeleteCourse(Guid id);
     }
 
     public class CourseRepository : ICourseRepository
@@ -37,7 +37,7 @@ namespace AnkiLingo.Services.Repositories
             return data;
         }
 
-        public async Task<Course> GetCourseById(int id)
+        public async Task<Course> GetCourseById(Guid id)
         {
             return await _dbContext.Courses.FindAsync(id);
         }
@@ -70,7 +70,7 @@ namespace AnkiLingo.Services.Repositories
             return false;
         }
 
-        public async Task<bool> DeleteCourse(int id)
+        public async Task<bool> DeleteCourse(Guid id)
         {
             var course = await GetCourseById(id);
             if (course != null)

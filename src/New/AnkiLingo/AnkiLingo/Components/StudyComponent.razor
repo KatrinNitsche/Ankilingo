@@ -1,8 +1,11 @@
 ﻿@using AnkiLingo.Data
 @using AnkiLingoApp.Helpers
 @using AnkiLingoApp.Models
+@using AnkiLingoBackendService
 @using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @if (Show && questions != null && questions.Count() > 0)
 {
@@ -166,6 +169,7 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<EntryData> OnUpdateEntry { get; set; }
     [Inject] private ISoundPlayer soundPlayer { get; set; }
+    [Inject] private IDatabaseService databaseService { get; set; }
     [Parameter] public CourseData CurrentCourse { get; set; }
     [Parameter] public string currentSection { get; set; }
     [Parameter] public string currentUnit { get; set; }
@@ -183,15 +187,17 @@
     private int xp = 0;
     private bool revealAnswer = false;
     private string textToReveal = string.Empty;
-
+    private UserData userData;
     private List<string> leftEntriesRemoved = new List<string>();
     private List<string> rightEntriesRemoved = new List<string>();
     private bool needsImageRedraw = false;
+    private string errorMessage = string.Empty;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (Entries.Count() == 0 || started) return;
-        SetQuestions();
+        await SetQuestions();
+        await LoadUserData();
     }
 
     public async Task SetQuestions()
@@ -538,7 +544,7 @@
         StateHasChanged();
     }
 
-    private void FinishLesson()
+    private async Task FinishLesson()
     {
         currentQuestionIndex++;
         leftEntriesRemoved.Clear();
@@ -550,11 +556,37 @@
         var duration = endTime - startTime;
         var timeOnly = new TimeOnly(duration.Hours, duration.Minutes, duration.Seconds);
 
-        // update user data
-        var filePaht = @"C:\temp\AnkiLingo\Data\UserData.xlsx";
-        ExcelService.UpdateUserData(filePaht, null, xp, timeOnly);
+        // update user data      
+        await databaseService.UpdateUserData(userData.UserId, xp, timeOnly);
 
         StateHasChanged();
+    }
+
+    private async Task LoadUserData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated ?? false)
+        {
+            // Try common claim names for user id
+            var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)
+                          ?? user.FindFirst("sub")
+                          ?? user.FindFirst(ClaimTypes.Name);
+
+            if (idClaim != null && Guid.TryParse(idClaim.Value, out var userId))
+            {
+                userData = await databaseService.GetUserData(userId);
+            }
+            else
+            {
+                errorMessage = "Unable to determine numeric user id from authentication claims.";
+            }
+        }
+        else
+        {
+            errorMessage = "User is not authenticated.";
+        }
     }
 
     private void CloseModal()

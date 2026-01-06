@@ -5,10 +5,10 @@ namespace AnkiLingo.Services.Repositories
     public interface IUnitRepository
     {
         IEnumerable<Unit> GetAllUnits();
-        Unit GetUnitById(int id);
+        Unit GetUnitById(Guid id);
         void AddUnit(Unit unit);
         void UpdateUnit(Unit unit);
-        void DeleteUnit(int id);
+        void DeleteUnit(Guid id);
     }
 
     public class UnitRepository : IUnitRepository
@@ -20,7 +20,7 @@ namespace AnkiLingo.Services.Repositories
             return _units;
         }
 
-        public Unit GetUnitById(int id)
+        public Unit GetUnitById(Guid id)
         {
             return _units.FirstOrDefault(u => u.Id == id);
         }
@@ -40,7 +40,7 @@ namespace AnkiLingo.Services.Repositories
             }
         }
 
-        public void DeleteUnit(int id)
+        public void DeleteUnit(Guid id)
         {
             var unit = GetUnitById(id);
             if (unit != null)

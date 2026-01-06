@@ -6,10 +6,11 @@ namespace AnkiLingo.Services.Repositories
 {
     public interface IUserCourseDataRepository
     {
-        Task<IEnumerable<UserCourseData>> GetUserCourseDataAsync(Guid userId, int courseId);
+        Task<IEnumerable<UserCourseData>> GetUserCourseDataAsync(Guid userId, Guid courseId);
         Task AddUserCourseDataAsync(UserCourseData userCourseData);
         Task UpdateUserCourseDataAsync(UserCourseData userCourseData);
-        Task DeleteUserCourseDataAsync(Guid userId, int courseId);
+        Task DeleteUserCourseDataAsync(Guid userId, Guid courseId);
+        Task<UserCourseData> GetUserCourseDataEntry(Guid userId, Guid courseId, Guid entryId);
     }
 
     public class UserCourseDataRepository : IUserCourseDataRepository
@@ -21,7 +22,7 @@ namespace AnkiLingo.Services.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<UserCourseData>> GetUserCourseDataAsync(Guid userId, int courseId)
+        public async Task<IEnumerable<UserCourseData>> GetUserCourseDataAsync(Guid userId, Guid courseId)
         {
             return await _context.UserCourseData
                 .Where(ucd => ucd.UserId == userId && ucd.CourseId == courseId)
@@ -37,7 +38,7 @@ namespace AnkiLingo.Services.Repositories
             _context.UserCourseData.Update(userCourseData);
             await _context.SaveChangesAsync();
         }
-        public async Task DeleteUserCourseDataAsync(Guid userId, int courseId)
+        public async Task DeleteUserCourseDataAsync(Guid userId, Guid courseId)
         {
             var userCourseData = await _context.UserCourseData
                 .FirstOrDefaultAsync(ucd => ucd.UserId == userId && ucd.CourseId == courseId);
@@ -46,6 +47,11 @@ namespace AnkiLingo.Services.Repositories
                 _context.UserCourseData.Remove(userCourseData);
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task<UserCourseData?> GetUserCourseDataEntry(Guid userId, Guid courseId, Guid entryId)
+        {
+            return await _context.UserCourseData
+                .FirstOrDefaultAsync(ucd => ucd.UserId == userId && ucd.CourseId == courseId && ucd.EntryId == entryId);
         }
     }
 }

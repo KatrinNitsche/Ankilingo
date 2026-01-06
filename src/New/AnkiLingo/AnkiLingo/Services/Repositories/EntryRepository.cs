@@ -5,10 +5,10 @@ namespace AnkiLingo.Services.Repositories
     public interface IEntryRepository
     {
         IEnumerable<Entry> GetAllEntries();
-        Entry GetEntryById(int id);
+        Entry GetEntryById(Guid id);
         void AddEntry(Entry entry);
         void UpdateEntry(Entry entry);
-        void DeleteEntry(int id);
+        void DeleteEntry(Guid id);
     }
 
     public class EntryRepository : IEntryRepository
@@ -18,7 +18,7 @@ namespace AnkiLingo.Services.Repositories
         {
             return _entries;
         }
-        public Entry GetEntryById(int id)
+        public Entry GetEntryById(Guid id)
         {
             return _entries.FirstOrDefault(e => e.Id == id);
         }
@@ -35,7 +35,7 @@ namespace AnkiLingo.Services.Repositories
                 _entries.Add(entry);
             }
         }
-        public void DeleteEntry(int id)
+        public void DeleteEntry(Guid id)
         {
             var entry = GetEntryById(id);
             if (entry != null)

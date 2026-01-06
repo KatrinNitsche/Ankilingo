@@ -1,10 +1,11 @@
-﻿using AnkiLingoExcelService.Data;
+﻿using AnkiLingo.Services;
+using AnkiLingoExcelService.Data;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Components.Forms;
 
 namespace AnkiLingoExcelService
 {
-    public static class ExcelService
+    public static class ExcelService 
     {
         public static CourseData LoadCourseFromExcel(IBrowserFile? file)
         {

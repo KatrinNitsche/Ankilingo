@@ -5,10 +5,10 @@ namespace AnkiLingo.Services.Repositories
     public interface ISectionRepository
     {
         IEnumerable<Section> GetAllSections();
-        Section GetSectionById(int id);
+        Section GetSectionById(Guid id);
         void AddSection(Section section);
         void UpdateSection(Section section);
-        void DeleteSection(int id);
+        void DeleteSection(Guid id);
     }
 
     public class SectionRepository : ISectionRepository
@@ -20,7 +20,7 @@ namespace AnkiLingo.Services.Repositories
             return _sections;
         }
 
-        public Section GetSectionById(int id)
+        public Section GetSectionById(Guid id)
         {
             return _sections.FirstOrDefault(s => s.Id == id);
         }
@@ -40,7 +40,7 @@ namespace AnkiLingo.Services.Repositories
             }
         }
 
-        public void DeleteSection(int id)
+        public void DeleteSection(Guid id)
         {
             var section = GetSectionById(id);
             if (section != null)

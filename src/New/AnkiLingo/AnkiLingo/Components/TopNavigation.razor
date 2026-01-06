@@ -71,6 +71,7 @@
                     <h3>Add New Course</h3>
                     <p>upload an excel file with a valid structure for the course information</p>
                     <InputFile OnChange="OnCourseFileChange" />
+                    <InputText @bind-Value="FilePath" placeholder="File Path" class="form-control mt-2" />
                     <button class="btn btn-primary" @onclick="UploadCourseFile">Upload</button>
                     <button class="btn btn-secondary" @onclick="() => ShowAddCourseDiv = false">Cancel</button>
                 </div>
@@ -93,6 +94,7 @@
     private bool ShowCourseListDiv;
     private bool ShowAddCourseDiv = false;
     private IBrowserFile? courseFile;
+    private string FilePath = string.Empty;
 
     [Parameter] public EventCallback<string> OnCourseChanged { get; set; }
     [Inject] public IDatabaseService databaseService { get; set; }
@@ -130,54 +132,64 @@
 
     async Task UploadCourseFile()
     {
-        // check if file is selected
-        if (courseFile != null)
-        {
-            var courseData = ExcelService.LoadCourseFromExcel(courseFile);
-            if (courseData != null)
-            {
-                var sectionList = new List<Section>();
-                foreach (var section in courseData.Sections)
-                {
-                    var newSection = new Section
-                    {
-                        Name = section.Name,
-                        Created = DateTime.Now,
-                        Updated = DateTime.Now,
-                        Units = section.Units.Select(u => new Unit
-                        {
-                            Name = u.Name,
-                            Created = DateTime.Now,
-                            Updated = DateTime.Now,
-                            Entries = u.Entries.Select(e => new AnkiLingo.Data.Entry
-                            {
-                                Name = e.Value1,
-                                Value1 = e.Value1,
-                                Value2 = e.Value2,
-                                Description = e.Value1,
-                                Created = DateTime.Now,
-                                Updated = DateTime.Now
-                            }).ToList()
-                        }).ToList()
-                    };
-                    sectionList.Add(newSection);
-                }
 
-                var courseToAdd = new Course
+        var courseData = null as CourseData;
+        if (FilePath == string.Empty)
+        {
+            courseData = ExcelService.LoadCourseFromExcel(courseFile);
+        }
+        else if (courseFile != null)
+        {
+            return;
+        }
+        else
+        {
+            courseData = ExcelService.GetCourseDetails(FilePath);
+        }
+
+        if (courseData != null)
+        {
+            var sectionList = new List<Section>();
+            foreach (var section in courseData.Sections)
+            {
+                var newSection = new Section
                 {
-                    Name = courseData.Name,
-                    Icon = courseData.Icon,
-                    Description = courseData.Description,
+                    Name = section.Name,
                     Created = DateTime.Now,
                     Updated = DateTime.Now,
-                    Sections = sectionList
+                    Units = section.Units.Select(u => new Unit
+                    {
+                        Name = u.Name,
+                        Created = DateTime.Now,
+                        Updated = DateTime.Now,
+                        Entries = u.Entries.Select(e => new AnkiLingo.Data.Entry
+                        {
+                            Name = e.Value1,
+                            Value1 = e.Value1,
+                            Value2 = e.Value2,
+                            Description = e.Value1,
+                            Created = DateTime.Now,
+                            Updated = DateTime.Now
+                        }).ToList()
+                    }).ToList()
                 };
-
-                await databaseService.AddCourse(courseToAdd);
-                await OnCourseChanged.InvokeAsync(courseToAdd.Name);
-                ShowAddCourseDiv = false;
-                HideCourseList();
+                sectionList.Add(newSection);
             }
+
+            var courseToAdd = new Course
+            {
+                Name = courseData.Name,
+                Icon = courseData.Icon,
+                Description = courseData.Description,
+                Created = DateTime.Now,
+                Updated = DateTime.Now,
+                Sections = sectionList
+            };
+
+            await databaseService.AddCourse(courseToAdd);
+            await OnCourseChanged.InvokeAsync(courseToAdd.Name);
+            ShowAddCourseDiv = false;
+            HideCourseList();
         }
     }
 }
