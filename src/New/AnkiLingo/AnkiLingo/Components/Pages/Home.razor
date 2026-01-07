@@ -218,6 +218,7 @@
     {
         entry.ReviewCount += 1;
         entry.LastReviewed = DateTime.Now;
+        entry.LevelOfKnowledge += 1;
 
         if (entry.ReviewCount > 5) entry.ReviewCount = 5; // cap review count at 5
 

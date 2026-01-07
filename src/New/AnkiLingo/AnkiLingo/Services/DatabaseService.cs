@@ -80,7 +80,7 @@ namespace AnkiLingoBackendService
                         Description = u.Description,
                         Entries = u.Entries.Select(e => new EntryData
                         {
-                            id = Guid.NewGuid(),
+                            id = e.Id,                            
                             CourseId = course.Id,
                             SectionId = s.Id,
                             UnitId = u.Id,
@@ -99,31 +99,21 @@ namespace AnkiLingoBackendService
                     foreach (EntryData entry in unit.Entries)
                     {
                         var existingEntry = userCourseData.FirstOrDefault(e => e.EntryId == entry.id);
-                        if (existingEntry == null)
+                        if (existingEntry != null)
                         {
-                            var newEntry = new UserCourseData
-                            {
-                                UserId = userId,
-                                CourseId = course.Id,
-                                SectionId = Guid.NewGuid(),
-                                UnitId = Guid.NewGuid(),
-                                EntryId = Guid.NewGuid(),
-                                LastReviewed = DateTime.UtcNow,
-                                ReviewCount = 0,
-                                LevelOfKnowledge = 0
-                            };
-                            await userCourseDataRepository.AddUserCourseDataAsync(newEntry);
-                            existingEntry = newEntry;
-
+                            entry.LastReviewed = existingEntry.LastReviewed;
+                            entry.ReviewCount = existingEntry.ReviewCount;
+                            entry.LevelOfKnowledge = existingEntry.LevelOfKnowledge;
                         }
-
-                        entry.LastReviewed = existingEntry.LastReviewed;
-                        entry.ReviewCount = existingEntry.ReviewCount;
-                        entry.LevelOfKnowledge = existingEntry.LevelOfKnowledge;
+                        else
+                        {
+                            entry.LastReviewed = DateTime.MinValue;
+                            entry.ReviewCount = 0;
+                            entry.LevelOfKnowledge = 0;
+                        }
                     }
                 }
             }
-
 
             return courseData;
         }

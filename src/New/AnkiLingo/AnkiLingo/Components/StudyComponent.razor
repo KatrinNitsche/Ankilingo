@@ -56,102 +56,105 @@
                 }
                 else
                 {
-                    Question entry = questions.ElementAt(currentQuestionIndex);
-                    switch (entry.QuestionType)
+                    if (currentQuestionIndex < questions.Count())
                     {
-                        case QuestionType.MultipleChoiceValue1:
-                        case QuestionType.MultipleChoiceValue2:
-                            <div class="multiple-choice">
-                                <h3 class="text-center">@entry.QuestionText</h3>
-                                <br />
-                                <div class="multiple-choice-questions">
-                                    @foreach (var answerOption in entry.Options)
-                                    {
-                                        <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption, true)">@answerOption</button>
-                                    }
-                                </div>
-                            </div>
-                            break;
-                        case QuestionType.InputValue1:
-                        case QuestionType.InputValue2:
-                            <div class="input-question">
-                                <h3 class="text-center">@entry.QuestionText</h3>
-                                <br />
-                                <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
-                                <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer, false)">Submit Answer</button>
-                            </div>
-                            break;
-                        case QuestionType.ListModelValue1:
-                        case QuestionType.ListModelValue2:
-                            <div class="list-mode">
-                                <div class="row">
-                                    <div class="col">
-                                        @foreach (var leftValue in entry.LeftValues)
+                        Question entry = questions.ElementAt(currentQuestionIndex);
+                        switch (entry.QuestionType)
+                        {
+                            case QuestionType.MultipleChoiceValue1:
+                            case QuestionType.MultipleChoiceValue2:
+                                <div class="multiple-choice">
+                                    <h3 class="text-center">@entry.QuestionText</h3>
+                                    <br />
+                                    <div class="multiple-choice-questions">
+                                        @foreach (var answerOption in entry.Options)
                                         {
-                                            if (leftEntriesRemoved.Contains(leftValue)) continue; // Skip removed entries
-                                                                                                  <button class="btn btn-@((selectedLeftValue == leftValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectLeft(leftValue)">@leftValue</button>
-                                        }
-                                    </div>
-                                    <div class="col">
-                                        @foreach (var rightValue in entry.RightValues)
-                                        {
-                                            if (rightEntriesRemoved.Contains(rightValue)) continue; // Skip removed entries
-                                                                                                    <button class="btn btn-@((selectedRightValue == rightValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectRight(rightValue)"> @rightValue</button>
+                                            <button class="btn btn-question w-25" @onclick="() => CheckAnswer(answerOption, true)">@answerOption</button>
                                         }
                                     </div>
                                 </div>
-                            </div>
-                            break;
-                        // case QuestionType.Image:
-                        //     <div class="image-question text-center">
+                                break;
+                            case QuestionType.InputValue1:
+                            case QuestionType.InputValue2:
+                                <div class="input-question">
+                                    <h3 class="text-center">@entry.QuestionText</h3>
+                                    <br />
+                                    <input type="text" class="form-control w-50 m-auto" @bind="entry.UserAnswer" placeholder="Type your answer here..." />
+                                    <button class="btn btn-primary mt-2" @onclick="() => CheckAnswer(entry.UserAnswer, false)">Submit Answer</button>
+                                </div>
+                                break;
+                            case QuestionType.ListModelValue1:
+                            case QuestionType.ListModelValue2:
+                                <div class="list-mode">
+                                    <div class="row">
+                                        <div class="col">
+                                            @foreach (var leftValue in entry.LeftValues)
+                                            {
+                                                if (leftEntriesRemoved.Contains(leftValue)) continue; // Skip removed entries
+                                                                                                      <button class="btn btn-@((selectedLeftValue == leftValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectLeft(leftValue)">@leftValue</button>
+                                            }
+                                        </div>
+                                        <div class="col">
+                                            @foreach (var rightValue in entry.RightValues)
+                                            {
+                                                if (rightEntriesRemoved.Contains(rightValue)) continue; // Skip removed entries
+                                                                                                        <button class="btn btn-@((selectedRightValue == rightValue) ? "primary" : "secondary") w-100 mb-1" @onclick="() => SelectRight(rightValue)"> @rightValue</button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                break;
+                            // case QuestionType.Image:
+                            //     <div class="image-question text-center">
 
-                        //         <div class="d-flex flex row justify-content-between">
+                            //         <div class="d-flex flex row justify-content-between">
 
-                        //             @if (entry.ImageWords.Any(x => x.WasChecked == false))
-                        //             {
-                        //                 <div class="image-canvas-container w-50">
-                        //                     <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
-                        //                          style="max-width: 100%; max-height: 100%;" />
-                        //                 </div>
-                        //             }
-                        //             else
-                        //             {
-                        //                 <div class="image-canvas-container w-50">
-                        //                     <img id="mainImage" src="@entry.Value1" alt="@entry.Value1"
-                        //                          style="max-width: 100%; max-height: 100%;" />
-                        //                 </div>
-                        //             }
-                        //             <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
-                        //                 @foreach (var cover in entry.ImageWords)
-                        //                 {
-                        //                     <li class="active list-group-item" style="@StyleForImageCover(cover)">
-                        //                         @if (!cover.WasChecked)
-                        //                         {
-                        //                             <input type="number" class="w-50" @bind="cover.UserInput" />
-                        //                             <br />
-                        //                         }
-                        //                         @cover.Value.Value1
-                        //                     </li>
-                        //                 }
-                        //             </ul>
-                        //         </div>
+                            //             @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                            //             {
+                            //                 <div class="image-canvas-container w-50">
+                            //                     <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
+                            //                          style="max-width: 100%; max-height: 100%;" />
+                            //                 </div>
+                            //             }
+                            //             else
+                            //             {
+                            //                 <div class="image-canvas-container w-50">
+                            //                     <img id="mainImage" src="@entry.Value1" alt="@entry.Value1"
+                            //                          style="max-width: 100%; max-height: 100%;" />
+                            //                 </div>
+                            //             }
+                            //             <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
+                            //                 @foreach (var cover in entry.ImageWords)
+                            //                 {
+                            //                     <li class="active list-group-item" style="@StyleForImageCover(cover)">
+                            //                         @if (!cover.WasChecked)
+                            //                         {
+                            //                             <input type="number" class="w-50" @bind="cover.UserInput" />
+                            //                             <br />
+                            //                         }
+                            //                         @cover.Value.Value1
+                            //                     </li>
+                            //                 }
+                            //             </ul>
+                            //         </div>
 
-                        //         @if (entry.ImageWords.Any(x => x.WasChecked == false))
-                        //         {
-                        //             <button class="btn btn-primary mt-2" @onclick="CheckImageAnswers">Check My Answers</button>
-                        //         }
+                            //         @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                            //         {
+                            //             <button class="btn btn-primary mt-2" @onclick="CheckImageAnswers">Check My Answers</button>
+                            //         }
 
-                        //         <button class="btn btn-primary mt-2" @onclick="NextQuestion">Next Question</button>
+                            //         <button class="btn btn-primary mt-2" @onclick="NextQuestion">Next Question</button>
 
 
-                        //     </div>
+                            //     </div>
 
-                        //     break;
-                        default:
-                            <div class="alert alert-danger">
-                                <strong>Error:</strong> Unknown question type.
-                            </div>
-                            break;
+                            //     break;
+                            default:
+                                <div class="alert alert-danger">
+                                    <strong>Error:</strong> Unknown question type.
+                                </div>
+                                break;
+                        }
                     }
                 }
             }
@@ -350,6 +353,7 @@
             soundPlayer.Play("audio/correct.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
+                id = currentQuestion.EntryData.id,
                 Value1 = currentQuestion.Value1,
                 Value2 = currentQuestion.Value2,
                 CourseId = currentQuestion.EntryData.CourseId,
@@ -369,6 +373,7 @@
             RevealAnswerForXSeceonds(3, currentQuestion.AnswerText); // Reveal the answer for 3 seconds
             OnUpdateEntry.InvokeAsync(new EntryData
             {
+                id = currentQuestion.EntryData.id,
                 Value1 = currentQuestion.Value1,
                 Value2 = currentQuestion.Value2,
                 CourseId = currentQuestion.EntryData.CourseId,
@@ -446,6 +451,7 @@
             soundPlayer.Play("audio/correct.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
+                id = currentEntry.id,
                 Value1 = Value1Entry,
                 Value2 = Value2Entry,
                 CourseId = currentEntry.CourseId,
@@ -464,6 +470,7 @@
             soundPlayer.Play("audio/wrong.mp3");
             OnUpdateEntry.InvokeAsync(new EntryData
             {
+                id = currentEntry.id,
                 Value1 = Value1Entry,
                 Value2 = Value2Entry,
                 CourseId = currentEntry.CourseId,
@@ -556,7 +563,7 @@
         var duration = endTime - startTime;
         var timeOnly = new TimeOnly(duration.Hours, duration.Minutes, duration.Seconds);
 
-        // update user data      
+        // update user data
         await databaseService.UpdateUserData(userData.UserId, xp, timeOnly);
 
         StateHasChanged();

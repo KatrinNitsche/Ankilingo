@@ -4,141 +4,145 @@
 @using AnkiLingoBackendService
 @using AnkiLingoExcelService
 @using AnkiLingoExcelService.Data
+@using System.Security.Claims
 
 <PageTitle>AnkiLingo</PageTitle>
+@if (userData != null && currentCourse != null)
+{
+    <TopNavigation currentCourse="currentCourse"
+                   courseList="courseList"
+                   gemsCount="userData.GemsCount"
+                   streakCount="userData.StreakLength"
+                   OnCourseChanged="LoadCourseContent"
+                   lastStudyDatetime="userData.LastStudy" />
 
-<TopNavigation currentCourse="currentCourse"
-               courseList="courseList"
-               gemsCount="userData.GemsCount"
-               streakCount="userData.StreakLength"
-               OnCourseChanged="LoadCourseContent"
-               lastStudyDatetime="userData.LastStudy" />
 
-<div class="d-flex flex-row gap-3">
-    <SiteNavigation />
+    <div class="d-flex flex-row gap-3">
+        <SiteNavigation />
 
-    <div id="course-content" class="w-75" style="padding-left: 20rem;">
+        <div id="course-content" class="w-75" style="padding-left: 20rem;">
 
-        <div class="d-flex flex-row mb-3 gap-3">
-            <div class="form-group">
-                <label for="sectionSelect">Select Section:</label>
+            <div class="d-flex flex-row mb-3 gap-3">
+                <div class="form-group">
+                    <label for="sectionSelect">Select Section:</label>
 
-                <select id="sectionSelect" class="form-select" @bind="selectedSection">
-                    @if (currentCourse != null)
-                    {
-                        <option value="">-- Select Section --</option>
-                        foreach (var sectionData in currentCourse.Sections)
+                    <select id="sectionSelect" class="form-select" @bind="selectedSection">
+                        @if (currentCourse != null)
                         {
-                            <option value="@sectionData.Name">@sectionData.Name</option>
-                        }
-                    }
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="unitSelect">Select Unit:</label>
-                <select id="unitSelect" class="form-select" @bind="selectedUnit">
-                    @if (currentCourse != null)
-                    {
-                        <option value="">-- Select Unit --</option>
-                        foreach (var section in currentCourse.Sections.Where(x => !string.IsNullOrEmpty(selectedSection) && x.Name == selectedSection))
-                        {
-                            foreach (var unit in section.Units)
+                            <option value="">-- Select Section --</option>
+                            foreach (var sectionData in currentCourse.Sections)
                             {
-                                <option value="@unit.Name">@unit.Name</option>
+                                <option value="@sectionData.Name">@sectionData.Name</option>
                             }
                         }
-                    }
-                </select>
+                    </select>
+                </div>
 
+                <div class="form-group">
+                    <label for="unitSelect">Select Unit:</label>
+                    <select id="unitSelect" class="form-select" @bind="selectedUnit">
+                        @if (currentCourse != null)
+                        {
+                            <option value="">-- Select Unit --</option>
+                            foreach (var section in currentCourse.Sections.Where(x => !string.IsNullOrEmpty(selectedSection) && x.Name == selectedSection))
+                            {
+                                foreach (var unit in section.Units)
+                                {
+                                    <option value="@unit.Name">@unit.Name</option>
+                                }
+                            }
+                        }
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+                    <label for="knowledgeSelect">Knowledge Level:</label>
+                    <select id="knowledgeSelect" class="form-select" @bind="selectedLevel">
+                        <option value="">-- Select Level --</option>
+                        <option value="0">0 - New</option>
+                        <option value="1">1 - Very Low</option>
+                        <option value="2">2 - Low</option>
+                        <option value="3">3 - Medium</option>
+                        <option value="4">4 - Good</option>
+                        <option value="5">5 - Very Good</option>
+                        <option value="6">6 - Excellent</option>
+                        <option value="7">7 - Mastered</option>
+                        <option value="8">8 - Perfect</option>
+                        <option value="9">9 - Legendary</option>
+                        <option value="10">10 - Immortal</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary mt-4" @onclick="FilterContent">Filter</button>
+                @if (!string.IsNullOrEmpty(selectedSection) && !string.IsNullOrEmpty(selectedUnit))
+                {
+                    <button class="btn btn-secondary mt-4" @onclick="StartStudySession">Study</button>
+                }
             </div>
 
-            <div class="form-group">
-                <label for="knowledgeSelect">Knowledge Level:</label>
-                <select id="knowledgeSelect" class="form-select" @bind="selectedLevel">
-                    <option value="">-- Select Level --</option>
-                    <option value="0">0 - New</option>
-                    <option value="1">1 - Very Low</option>
-                    <option value="2">2 - Low</option>
-                    <option value="3">3 - Medium</option>
-                    <option value="4">4 - Good</option>
-                    <option value="5">5 - Very Good</option>
-                    <option value="6">6 - Excellent</option>
-                    <option value="7">7 - Mastered</option>
-                    <option value="8">8 - Perfect</option>
-                    <option value="9">9 - Legendary</option>
-                    <option value="10">10 - Immortal</option>
-                </select>
-            </div>
+            <ul class="d-flex flex-row flex-wrap gap-4">
+                @foreach (var entry in Entries)
+                {
+                    <li class="list-group-item w-25 p-3 border rounded-2 shadow">
+                        @switch (entry.LevelOfKnowledge)
+                        {
+                            case 0:
+                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 1:
+                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 2:
+                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 3:
+                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 4:
+                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 5:
+                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 6:
+                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 7:
+                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                break;
+                            case 8:
+                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                break;
+                            default:
+                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                break;
+                        }
 
-            <button class="btn btn-primary mt-4" @onclick="FilterContent">Filter</button>
-            @if (!string.IsNullOrEmpty(selectedSection) && !string.IsNullOrEmpty(selectedUnit))
-            {
-                <button class="btn btn-secondary mt-4" @onclick="StartStudySession">Study</button>
-            }
+                        <strong> @entry.Value1</strong> - @entry.Value2
+                        <br /> Last Reviewed:
+                        @if (entry.LastReviewed.Year < 1900)
+                        {
+                            <small>never</small>
+                        }
+                        else
+                        {
+                            <small>@entry.LastReviewed.ToShortDateString()</small>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <StudyComponent @ref="studyComponentRef"
+                            Entries="StudyContent"
+                            Show="showStudyModal"
+                            OnClose="CloseStudyModal"
+                            OnUpdateEntry="(entry) => UpdateEntry(entry)"
+                            CurrentCourse="currentCourse" />
+
         </div>
-
-        <ul class="d-flex flex-row flex-wrap gap-4">
-            @foreach (var entry in Entries)
-            {
-                <li class="list-group-item w-25 p-3 border rounded-2 shadow">
-                    @switch (entry.LevelOfKnowledge)
-                    {
-                        case 0:
-                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 1:
-                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 2:
-                            <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 3:
-                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 4:
-                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 5:
-                            <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 6:
-                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 7:
-                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                            break;
-                        case 8:
-                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                            break;
-                        default:
-                            <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                            break;
-                    }
-
-                    <strong> @entry.Value1</strong> - @entry.Value2
-                    <br /> Last Reviewed:
-                    @if (entry.LastReviewed.Year < 1900)
-                    {
-                        <small>never</small>
-                    }
-                    else
-                    {
-                        <small>@entry.LastReviewed.ToShortDateString()</small>
-                    }
-                </li>
-            }
-        </ul>
-
-        <StudyComponent @ref="studyComponentRef"
-                        Entries="StudyContent"
-                        Show="showStudyModal"
-                        OnClose="CloseStudyModal"
-                        OnUpdateEntry="(entry) => UpdateEntry(entry)"
-                        CurrentCourse="currentCourse" />
-
     </div>
-</div>
+}
 
 @code {
     private IEnumerable<string> courseList = new List<string>();
@@ -168,12 +172,14 @@
     private int currentImageMaxHeight = 1000;
     private string coverText = "";
     [Inject] public IDatabaseService databaseService { get; set; }
+    @inject AuthenticationStateProvider AuthenticationStateProvider
 
     protected override async Task OnInitializedAsync()
     {
         try
-        {
+        {            
             courseList = await databaseService.GetCourseNames();
+            await LoadUserData();
             selectedCourse = userData.CurrentCourse;
             await LoadCourseContent(userData.CurrentCourse);
         }
@@ -258,5 +264,32 @@
         if (entry.LevelOfKnowledge > 10) entry.LevelOfKnowledge = 10;
         if (entry.LevelOfKnowledge < 0) entry.LevelOfKnowledge = 0;
         databaseService.UpdateEntry(userData.UserId, entry);
+    }
+
+    private async Task LoadUserData()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user?.Identity?.IsAuthenticated ?? false)
+        {
+            // Try common claim names for user id
+            var idClaim = user.FindFirst(ClaimTypes.NameIdentifier)
+                          ?? user.FindFirst("sub")
+                          ?? user.FindFirst(ClaimTypes.Name);
+
+            if (idClaim != null && Guid.TryParse(idClaim.Value, out var userId))
+            {
+                userData = await databaseService.GetUserData(userId);
+            }
+            else
+            {
+                errorMessage = "Unable to determine numeric user id from authentication claims.";
+            }
+        }
+        else
+        {
+            errorMessage = "User is not authenticated.";
+        }
     }
 }
