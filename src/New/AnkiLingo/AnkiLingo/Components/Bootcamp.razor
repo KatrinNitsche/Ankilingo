@@ -20,7 +20,7 @@
     <div class="d-flex flex-row gap-3">
         <SiteNavigation />
 
-        <div id="course-content" class="w-75" style="padding-left: 20rem;">
+        <div id="course-content" style="padding-left: 0; padding-right: 0">
 
             <div class="d-flex flex-row mb-3 gap-3">
                 <div class="form-group">
@@ -30,7 +30,7 @@
                         @if (currentCourse != null)
                         {
                             <option value="">-- Select Section --</option>
-                            foreach (var sectionData in currentCourse.Sections)
+                            foreach (var sectionData in currentCourse.Sections.Where(s => s.Units.Count() > 0))
                             {
                                 <option value="@sectionData.Name">@sectionData.Name</option>
                             }
@@ -44,9 +44,9 @@
                         @if (currentCourse != null)
                         {
                             <option value="">-- Select Unit --</option>
-                            foreach (var section in currentCourse.Sections.Where(x => !string.IsNullOrEmpty(selectedSection) && x.Name == selectedSection))
+                            foreach (var section in currentCourse.Sections.Where(x => !string.IsNullOrEmpty(selectedSection) && x.Name == selectedSection && x.Units.Count() > 0))
                             {
-                                foreach (var unit in section.Units)
+                                foreach (var unit in section.Units.Where(u => u.Entries.Count() > 0))
                                 {
                                     <option value="@unit.Name">@unit.Name</option>
                                 }
@@ -81,57 +81,59 @@
                 }
             </div>
 
-            <ul class="d-flex flex-row flex-wrap gap-4">
-                @foreach (var entry in Entries)
-                {
-                    <li class="list-group-item w-25 p-3 border rounded-2 shadow">
-                        @switch (entry.LevelOfKnowledge)
-                        {
-                            case 0:
-                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 1:
-                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 2:
-                                <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 3:
-                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 4:
-                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 5:
-                                <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 6:
-                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 7:
-                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                                break;
-                            case 8:
-                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                                break;
-                            default:
-                                <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
-                                break;
-                        }
+            <div id="scroll-area" style="height: 700px; overflow: scroll;">
+                <ul class="d-flex flex-row flex-wrap gap-4">
+                    @foreach (var entry in Entries)
+                    {
+                        <li class="list-group-item col-3 p-2 border rounded-2 shadow">
+                            @switch (entry.LevelOfKnowledge)
+                            {
+                                case 0:
+                                    <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 1:
+                                    <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 2:
+                                    <h6 class="badge bg-danger">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 3:
+                                    <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 4:
+                                    <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 5:
+                                    <h6 class="badge bg-warning">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 6:
+                                    <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 7:
+                                    <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                case 8:
+                                    <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                    break;
+                                default:
+                                    <h6 class="badge bg-success">@entry.LevelOfKnowledge</h6>
+                                    break;
+                            }
 
-                        <strong> @entry.Value1</strong> - @entry.Value2
-                        <br /> Last Reviewed:
-                        @if (entry.LastReviewed.Year < 1900)
-                        {
-                            <small>never</small>
-                        }
-                        else
-                        {
-                            <small>@entry.LastReviewed.ToShortDateString()</small>
-                        }
-                    </li>
-                }
-            </ul>
+                            <strong> @entry.Value1</strong> - @entry.Value2
+                            <br /> Last Reviewed:
+                            @if (entry.LastReviewed.Year < 1900)
+                            {
+                                <small>never</small>
+                            }
+                            else
+                            {
+                                <small>@entry.LastReviewed.ToShortDateString()</small>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
 
             <StudyComponent @ref="studyComponentRef"
                             Entries="StudyContent"
@@ -144,6 +146,7 @@
     </div>
 }
 
+
 @code {
     private IEnumerable<string> courseList = new List<string>();
     private List<EntryData> Entries { get; set; } = new List<EntryData>();
@@ -154,16 +157,9 @@
     private string selectedSection { get; set; }
     private string selectedUnit { get; set; }
     private string selectedLevel { get; set; }
-    private List<string> BackgroundColours = new List<string>()
-    {
-    "#FFCDD2", "#F8BBD0", "#E1BEE7", "#D1C4E9", "#C5CAE9","#BBDEFB", "#B3E5FC", "#B2EBF2", "#B2DFDB", "#C8E6C9",
-    "#DCEDC8", "#F0F4C3", "#FFF9C4", "#FFECB3", "#FFE0B2", "#FFCCBC", "#D7CCC8", "#CFD8DC", "#E0E0E0", "#FAFAFA"
-    };
     private string selectedCourse { get; set; }
-
     private bool showStudyModal = false;
     private StudyComponent studyComponentRef;
-
     private List<ImageData> images = new List<ImageData>();
     private ImageData currentImage;
     private string currentImageName;
@@ -177,7 +173,7 @@
     protected override async Task OnInitializedAsync()
     {
         try
-        {            
+        {
             courseList = await databaseService.GetCourseNames();
             await LoadUserData();
             selectedCourse = userData.CurrentCourse;
@@ -201,13 +197,7 @@
     {
         try
         {
-            currentCourse = await databaseService.GetCourseDetails(userData.UserId, selectedCourse);
-
-            foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
-            {
-                unit.BackgroundColor = BackgroundColours[new Random().Next(BackgroundColours.Count)];
-            }
-
+            currentCourse = await databaseService.GetCourseContent(userData.UserId, userData.CurrentCourse);
             userData.CurrentCourse = courseName;
 
             // add all entries from all sections and units to Entries
@@ -225,8 +215,7 @@
                         continue; // Skip units that don't match the selected unit
                     }
 
-                    Entries.AddRange(unit.Entries.Where(x => x.LastReviewed.Year > 1901 &&
-                                                            (string.IsNullOrEmpty(selectedLevel) || x.LevelOfKnowledge.ToString().Equals(selectedLevel))));
+                    Entries.AddRange(unit.Entries.Where(x => string.IsNullOrEmpty(selectedLevel) || x.LevelOfKnowledge.ToString().Equals(selectedLevel)));
                 }
             }
 
