@@ -19,7 +19,8 @@
 
         @if (!isLoading && currentCourse != null)
         {
-            <TopNavigation currentCourse="currentCourse"
+            <TopNavigation userId="userData.UserId"
+                           currentCourse="currentCourse"
                            courseList="courseList"
                            gemsCount="userData.GemsCount"
                            streakCount="userData.StreakLength"

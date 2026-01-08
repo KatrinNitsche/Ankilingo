@@ -59,7 +59,7 @@
                 {
                     @foreach (string course in courseList.ToList())
                     {
-                        <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)">@course</li>
+                        <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)"> <img src="@GetCourseIconPath(course)" alt="Course" class="top-nav-icon" /> @course</li>
                     }
                 }
                 <li class="course-list-entry" @onclick="AddNewCourse">Add New Course</li>
@@ -83,6 +83,7 @@
 }
 
 @code {
+    [Parameter] public Guid userId { get; set; }
     [Parameter] public int streakCount { get; set; }
     [Parameter] public int gemsCount { get; set; }
     [Parameter] public DateTime lastStudyDatetime { get; set; }
@@ -103,6 +104,7 @@
     void ShowStreak() { /* Reveal streak details below */ }
     void ShowGems() { /* Reveal gems details below */ }
     void ShowXP() { /* Reveal hearts details below */ }
+    
     void ShowCourseList()
     {
         ShowCourseListDiv = true;
@@ -191,5 +193,11 @@
             ShowAddCourseDiv = false;
             HideCourseList();
         }
+    }
+
+    string GetCourseIconPath(string courseName)
+    {
+        var course = databaseService.GetCourseDetails(userId, courseName).Result;
+        return course != null ? $"images/icons/{course.Icon}.png" : "images/course.png";
     }
 }
