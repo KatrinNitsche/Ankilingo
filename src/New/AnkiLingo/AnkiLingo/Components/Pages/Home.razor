@@ -196,7 +196,7 @@
     {
         try
         {
-            currentCourse = await databaseService.GetCourseContent(userData.UserId, userData.CurrentCourse);
+            currentCourse = await databaseService.GetCourseContent(userData.UserId, courseName);
             await databaseService.UpdateUserData(userData.UserId, courseName);
 
             foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))
