@@ -11,7 +11,13 @@
 {
     <div class="modal-overlay">
         <div class="modal-content" style="background-color: white; border-radius: 10px;">
-            <h2>@Title - Question: @currentQuestionIndex of @questions.Count()</h2>
+            <h2>
+                @Title
+                @if (!showSummary)
+                {
+                    <span> - Question: @(currentQuestionIndex + 1) of @questions.Count() </span>
+                }
+            </h2>
 
             @if (revealAnswer)
             {
@@ -163,6 +169,7 @@
         </div>
     </div>
 }
+
 
 @code {
     [Parameter] public string Title { get; set; } = "Study Lesson";
@@ -432,9 +439,6 @@
         var checkIfAnswerIsCorrect = Entries.Any(e => (e.Value1 == selectedLeftValue && e.Value2 == selectedRightValue) ||
                                                       (e.Value1 == selectedRightValue && e.Value2 == selectedLeftValue));
 
-        leftEntriesRemoved.Add(selectedLeftValue);
-        rightEntriesRemoved.Add(selectedRightValue);
-
         var Value1Entry = currentEntry.Value1;
         var Value2Entry = currentEntry.Value2;
         if (questions.ElementAt(currentQuestionIndex).QuestionType == QuestionType.MultipleChoiceValue2)
@@ -461,6 +465,9 @@
                 LevelOfKnowledge = currentEntry.LevelOfKnowledge + 1,
                 LastReviewed = DateTime.Now
             });
+
+            leftEntriesRemoved.Add(selectedLeftValue);
+            rightEntriesRemoved.Add(selectedRightValue);
         }
         else
         {

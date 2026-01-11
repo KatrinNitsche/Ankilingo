@@ -130,7 +130,7 @@
 
                     <StudyComponent Entries="currentLesson"
                                     Show="showStudyModal"
-                                    OnClose="() => showStudyModal = false"
+                                    OnClose="LoadCourseContent"
                                     OnUpdateEntry="(entry) => UpdateEntry(entry)"
                                     CurrentCourse="@currentCourse"
                                     currentSection="@currentSectionName"
@@ -190,6 +190,12 @@
             errorMessage = "Failed to load course list. Please check the console for details." + ex.Message;
             StateHasChanged();
         }
+    }
+
+    protected void LoadCourseContent()
+    {
+        showStudyModal = false;
+        LoadCourseContent(userData.CurrentCourse);
     }
 
     protected async Task LoadCourseContent(string courseName)
