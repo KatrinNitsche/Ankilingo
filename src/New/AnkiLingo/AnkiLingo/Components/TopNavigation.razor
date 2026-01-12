@@ -62,7 +62,7 @@
                         <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)"> <img src="@GetCourseIconPath(course)" alt="Course" class="top-nav-icon" /> @course</li>
                     }
                 }
-                <li class="course-list-entry" @onclick="AddNewCourse">Add New Course</li>
+                <li class="course-list-entry bg-dark" @onclick="AddNewCourse">Add New Course</li>
             </ul>
 
             @if (ShowAddCourseDiv)
