@@ -545,7 +545,7 @@
             return "background-color: lightgray;";
         }
 
-        return $"background-color: {(question.WasChecked && question.Id == question.UserInput ? "green" : "red")};";
+        return $"background-color: {(question.WasChecked && question.EntryId == question.UserInput ? "green" : "red")};";
     }
 
     private async Task RevealAnswerForXSeceonds(int seconds, string text)

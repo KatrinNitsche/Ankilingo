@@ -4,6 +4,7 @@ namespace AnkiLingo.Data
 {
     public class ImageData
     {
+        public Guid id { get; set; }
         public string SectionName { get; set; } = string.Empty;
         public string UnitName { get; set; } = string.Empty;
         public string ImageName { get; set; } = string.Empty;
@@ -12,7 +13,8 @@ namespace AnkiLingo.Data
 
     public class ImageWord
     {
-        public int Id { get; set; }
+        public Guid id { get; set; }
+        public int EntryId { get; set; }
         public EntryData Value { get; set; }
         public int UserInput { get; set; }
         public bool WasChecked { get; set; } = false;

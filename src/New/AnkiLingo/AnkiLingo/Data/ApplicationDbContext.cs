@@ -12,5 +12,6 @@ namespace AnkiLingo.Data
         public DbSet<Entry> Entries { get; set; }
         public DbSet<UserData> UserData { get; set; }
         public DbSet<UserCourseData> UserCourseData { get; set; }
+        public DbSet<ImageData> Images { get; set; }
     }
 }

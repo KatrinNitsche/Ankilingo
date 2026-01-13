@@ -1,4 +1,4 @@
-﻿using AnkiLingo.Services;
+﻿using AnkiLingo.Data;
 using AnkiLingoExcelService.Data;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Components.Forms;
@@ -122,6 +122,9 @@ namespace AnkiLingoExcelService
                 row++;
             }
 
+            // addi image data
+            courseData.Images = GetImages(filePath);
+                
             return courseData;
         }
 
@@ -190,98 +193,98 @@ namespace AnkiLingoExcelService
             return section;
         }
 
-        //public static List<ImageData> GetImages(string filePath)
-        //{
-        //    if (!File.Exists(filePath))
-        //    {
-        //        Console.WriteLine($"File {filePath} does not exist.");
-        //        return new List<ImageData>();
-        //    }
-        //    using var workbook = new XLWorkbook(filePath);
-        //    var worksheet = workbook.Worksheet("Images");
-        //    int row = 3;
-        //    var images = new List<ImageData>();
-        //    while (!worksheet.Cell($"A{row}").IsEmpty())
-        //    {
-        //        var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
-        //        var unitName = worksheet.Cell($"B{row}").GetValue<string>();
-        //        var imageName = worksheet.Cell($"C{row}").GetValue<string>();
-        //        var image = images.FirstOrDefault(i => i.ImageName == imageName && i.SectionName == sectionName && i.UnitName == unitName);
-        //        if (image == null)
-        //        {
-        //            image = new ImageData
-        //            {
-        //                SectionName = sectionName,
-        //                UnitName = unitName,
-        //                ImageName = imageName,
-        //                ImageCovers = new List<ImageWord>()
-        //            };
-        //            images.Add(image);
-        //        }
+        private static List<ImageData> GetImages(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return new List<ImageData>();
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet("Images");
+            int row = 3;
+            var images = new List<ImageData>();
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
+                var unitName = worksheet.Cell($"B{row}").GetValue<string>();
+                var imageName = worksheet.Cell($"C{row}").GetValue<string>();
+                var image = images.FirstOrDefault(i => i.ImageName == imageName && i.SectionName == sectionName && i.UnitName == unitName);
+                if (image == null)
+                {
+                    image = new ImageData
+                    {
+                        SectionName = sectionName,
+                        UnitName = unitName,
+                        ImageName = imageName,
+                        ImageCovers = new List<ImageWord>()
+                    };
+                    images.Add(image);
+                }
 
-        //        // the following columns can be empty or contain data for an image cover
-        //        if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty() ||
-        //            worksheet.Cell($"F{row}").IsEmpty() || worksheet.Cell($"G{row}").IsEmpty() ||
-        //            worksheet.Cell($"H{row}").IsEmpty())
-        //        {
-        //            row++;
-        //        }
-        //        else
-        //        {
-        //            var index = worksheet.Cell($"D{row}").GetValue<int>();
-        //            var Value1 = worksheet.Cell($"E{row}").GetValue<string>();
-        //            var Value2 = string.Empty;
-        //            var LevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
-        //            var imageCover = new ImageWord
-        //            {
-        //                Id = index,
-        //                Value = new EntryData
-        //                {
-        //                    Value1 = Value1,
-        //                    Value2 = Value2,
-        //                    LevelOfKnowledge = LevelOfKnowledge,
-        //                    LastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>(),
-        //                    ReviewCount = worksheet.Cell($"H{row}").GetValue<int>()
-        //                }
-        //            };
-        //            image.ImageCovers.Add(imageCover);
-        //        }
+                // the following columns can be empty or contain data for an image cover
+                if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty() ||
+                    worksheet.Cell($"F{row}").IsEmpty() || worksheet.Cell($"G{row}").IsEmpty() ||
+                    worksheet.Cell($"H{row}").IsEmpty())
+                {
+                    row++;
+                }
+                else
+                {
+                    var index = worksheet.Cell($"D{row}").GetValue<int>();
+                    var Value1 = worksheet.Cell($"E{row}").GetValue<string>();
+                    var Value2 = string.Empty;
+                    var LevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
+                    var imageCover = new ImageWord
+                    {
+                        EntryId = index,
+                        Value = new EntryData
+                        {
+                            Value1 = Value1,
+                            Value2 = Value2,
+                            LevelOfKnowledge = LevelOfKnowledge,
+                            LastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>(),
+                            ReviewCount = worksheet.Cell($"H{row}").GetValue<int>()
+                        }
+                    };
+                    image.ImageCovers.Add(imageCover);
+                }
 
-        //        row++;
-        //    }
+                row++;
+            }
 
-        //    return images;
-        //}
+            return images;
+        }
 
-        //public static bool UpdateImageEntry(string filePath, string sectionName, string unitName, string imageName, int index, int levelOfKnowledge)
-        //{
-        //    if (!File.Exists(filePath))
-        //    {
-        //        Console.WriteLine($"File {filePath} does not exist.");
-        //        return false;
-        //    }
-        //    using var workbook = new XLWorkbook(filePath);
-        //    var worksheet = workbook.Worksheet("Images");
-        //    int row = 3;
-        //    while (!worksheet.Cell($"A{row}").IsEmpty())
-        //    {
-        //        if (worksheet.Cell($"A{row}").GetValue<string>() == sectionName &&
-        //            worksheet.Cell($"B{row}").GetValue<string>() == unitName &&
-        //            worksheet.Cell($"C{row}").GetValue<string>() == imageName &&
-        //            worksheet.Cell($"D{row}").GetValue<int>() == index)
-        //        {
-        //            var reviewCountCell = worksheet.Cell($"H{row}");                     
-        //            int newReviewCount = reviewCountCell.GetValue<int>() + 1;
-        //            reviewCountCell.Value = newReviewCount;
-        //            worksheet.Cell($"F{row}").Value = levelOfKnowledge;
-        //            worksheet.Cell($"G{row}").Value = DateTime.Now; // Update Last Reviewed to now
-        //            workbook.Save();
-        //            return true;
-        //        }
-        //        row++;
-        //    }
-        //    Console.WriteLine("Entry not found.");
-        //    return false;
-        //}
+        public static bool UpdateImageEntry(string filePath, string sectionName, string unitName, string imageName, int index, int levelOfKnowledge)
+        {
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"File {filePath} does not exist.");
+                return false;
+            }
+            using var workbook = new XLWorkbook(filePath);
+            var worksheet = workbook.Worksheet("Images");
+            int row = 3;
+            while (!worksheet.Cell($"A{row}").IsEmpty())
+            {
+                if (worksheet.Cell($"A{row}").GetValue<string>() == sectionName &&
+                    worksheet.Cell($"B{row}").GetValue<string>() == unitName &&
+                    worksheet.Cell($"C{row}").GetValue<string>() == imageName &&
+                    worksheet.Cell($"D{row}").GetValue<int>() == index)
+                {
+                    var reviewCountCell = worksheet.Cell($"H{row}");
+                    int newReviewCount = reviewCountCell.GetValue<int>() + 1;
+                    reviewCountCell.Value = newReviewCount;
+                    worksheet.Cell($"F{row}").Value = levelOfKnowledge;
+                    worksheet.Cell($"G{row}").Value = DateTime.Now; // Update Last Reviewed to now
+                    workbook.Save();
+                    return true;
+                }
+                row++;
+            }
+            Console.WriteLine("Entry not found.");
+            return false;
+        }
     }
 }

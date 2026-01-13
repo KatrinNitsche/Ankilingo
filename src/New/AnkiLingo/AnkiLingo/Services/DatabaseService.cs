@@ -38,7 +38,16 @@ namespace AnkiLingoBackendService
         {
             try
             {
-                await courseRepository.AddCourse(course);
+                // check if course already exists
+                var existingCourse = await courseRepository.GetCourseByName(course.Name);
+                if (existingCourse != null)
+                {
+                    await courseRepository.UpdateCourse(course);
+                }
+                else
+                {
+                    await courseRepository.AddCourse(course);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -80,7 +89,7 @@ namespace AnkiLingoBackendService
                         Description = u.Description,
                         Entries = u.Entries.Select(e => new EntryData
                         {
-                            id = e.Id,                            
+                            id = e.Id,
                             CourseId = course.Id,
                             SectionId = s.Id,
                             UnitId = u.Id,
@@ -90,6 +99,15 @@ namespace AnkiLingoBackendService
                     }).ToList()
                 }).ToList()
             };
+
+            if (course.Images != null)
+            {
+                course.Images = course.Images.ToList();
+            }
+            else
+            {
+                course.Images = new List<ImageData>();
+            }
 
             // add missing entries to userCourseData
             foreach (SectionData section in courseData.Sections)

@@ -1,4 +1,6 @@
-﻿namespace AnkiLingoExcelService.Data
+﻿using AnkiLingo.Data;
+
+namespace AnkiLingoExcelService.Data
 {
     public class CourseData
     {
@@ -7,6 +9,7 @@
         public string Icon { get; set; } = string.Empty;
 
         public List<SectionData> Sections { get; set; } = new List<SectionData>();
+        public List<ImageData> Images { get; set; } = new List<ImageData>();
     }
 
     public class SectionData
