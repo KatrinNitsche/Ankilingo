@@ -85,40 +85,6 @@ namespace AnkiLingoExcelService
             return courseData;
         }
 
-
-        /// <summary>
-        /// returns the list of excel file names in the given directory
-        /// </summary>
-        /// <param name="filePath">file path</param>
-        /// <returns>list of file names</returns>
-        public static List<string> GetCourseNames(string filePath)
-        {
-            List<string> courseNames = new List<string>();
-            if (!Directory.Exists(filePath))
-            {
-                Console.WriteLine($"Directory {filePath} does not exist.");
-                return courseNames;
-            }
-            var files = Directory.GetFiles(filePath, "*.xlsx");
-            if (files.Length == 0)
-            {
-                Console.WriteLine("No Excel files found in the directory.");
-                return courseNames;
-            }
-            foreach (var file in files)
-            {
-                using var workbook = new XLWorkbook(file);
-                var worksheet = workbook.Worksheet(1); // 1-based index for the first worksheet
-                var cellValue = worksheet.Cell("B1").GetValue<string>();
-
-                if (!string.IsNullOrEmpty(cellValue))
-                {
-                    courseNames.Add(cellValue);
-                }
-            }
-            return courseNames;
-        }
-
         /// <summary>
         /// returns the course details from the first worksheet of the given Excel file
         /// </summary>
@@ -165,7 +131,7 @@ namespace AnkiLingoExcelService
         /// <param name="filePath">file path</param>
         /// <param name="sectionName">name of the section (tab name in the excel file)</param>
         /// <returns>section object</returns>
-        public static SectionData GetSectionDetails(string filePath, string sectionName)
+        private static SectionData GetSectionDetails(string filePath, string sectionName)
         {
             if (!File.Exists(filePath))
             {
@@ -204,15 +170,9 @@ namespace AnkiLingoExcelService
             {
                 var value1 = worksheet.Cell($"B{row}").GetValue<string>();
                 var value2 = worksheet.Cell($"C{row}").GetValue<string>();
-                var levelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
-                var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
-                var reviewCount = worksheet.Cell($"F{row}").GetValue<int>();
-
+           
                 var entry = new EntryData
                 {
-                    LastReviewed = lastReviewed,
-                    LevelOfKnowledge = levelOfKnowledge,
-                    ReviewCount = reviewCount,
                     Value1 = value1,
                     Value2 = value2
                 };
@@ -228,51 +188,6 @@ namespace AnkiLingoExcelService
             }
 
             return section;
-        }
-
-        public static List<EntryData> GetEntries(string filePath, string sectionName)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return new List<EntryData>();
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet(sectionName); // 1-based index for the first worksheet
-            int row = 1;
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                row++;
-            }
-            row++; // Skip the header row for entries
-            var entries = new List<EntryData>();
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                if (worksheet.Cell($"B{row}").GetValue<string>() == "Value 1")
-                {
-                    row++; // Skip the header row for entries
-                    continue;
-                }
-
-                var Value1 = worksheet.Cell($"B{row}").GetValue<string>();
-                var Value2 = worksheet.Cell($"C{row}").GetValue<string>();
-                var LevelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
-                var LastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
-                var ReviewCount = worksheet.Cell($"F{row}").GetValue<int>();
-
-                var entry = new EntryData
-                {
-                    Value1 = Value1,
-                    Value2 = Value2,
-                    LevelOfKnowledge = LevelOfKnowledge,
-                    LastReviewed = LastReviewed,
-                    ReviewCount = ReviewCount
-                };
-
-                entries.Add(entry);
-                row++;
-            }
-            return entries;
         }
 
         //public static List<ImageData> GetImages(string filePath)
@@ -368,167 +283,5 @@ namespace AnkiLingoExcelService
         //    Console.WriteLine("Entry not found.");
         //    return false;
         //}
-
-        /// <summary>
-        /// Updates the LevelOfKnowledge and LastReviewed fields of an entry in the specified section and unit.
-        /// </summary>
-        /// <param name="filePath">The path to the Excel file.</param>
-        /// <param name="sectionName">name of the section (tab name in the excel file)</param>
-        /// <param name="unitName">name of the unit</param>
-        /// <param name="value1">value 1</param>
-        /// <param name="value2">value 2</param>
-        /// <param name="levelOfKnowledge">new level of knowledge</param>
-        public static bool UpdateEntry(string filePath, string sectionName, string unitName, string value1, string value2, int levelOfKnowlege)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return false;
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet(sectionName); // 1-based index for the first worksheet
-            int row = 1;
-
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                row++;
-            }
-
-            row++; // Skip the header row for entries
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                if (worksheet.Cell($"A{row}").GetValue<string>() == unitName &&
-                    worksheet.Cell($"B{row}").GetValue<string>() == value1 &&
-                    worksheet.Cell($"C{row}").GetValue<string>() == value2)
-                {
-                    var reviewCountCell = worksheet.Cell($"F{row}");
-                    var lastReviewed = worksheet.Cell($"E{row}").GetValue<DateTime>();
-                    var oldLevelOfKnowledge = worksheet.Cell($"D{row}").GetValue<int>();
-
-                    if (oldLevelOfKnowledge < levelOfKnowlege)
-                    {
-                        // Increment review count if the level of knowledge has increased
-                        int newReviewCount = reviewCountCell.GetValue<int>() + 1;
-                        reviewCountCell.Value = newReviewCount;
-                    }
-
-                    worksheet.Cell($"D{row}").Value = levelOfKnowlege;
-                    worksheet.Cell($"E{row}").Value = DateTime.Now; // Update Last Reviewed to now
-
-                    workbook.Save();
-                    return true;
-                }
-                row++;
-            }
-            Console.WriteLine("Entry not found.");
-            return false;
-        }
-
-        /// <summary>
-        /// Read user data from the first worksheet of the given Excel file
-        /// </summary>
-        /// <param name="filePath">excel file</param>
-        /// <returns>user information</returns>
-        public static UserData GetUserData(string filePath)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return new UserData();
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet(1); // 1-based index for the first worksheet
-            var userData = new UserData
-            {
-                StreakLength = worksheet.Cell("B4").GetValue<int>(),
-                GemsCount = worksheet.Cell("B2").GetValue<int>(),
-                CurrentCourse = worksheet.Cell("B1").GetValue<string>(),
-                LastStudy = worksheet.Cell("B5").GetValue<DateTime>(),
-                XPCount = worksheet.Cell("B3").GetValue<int>()
-            };
-            return userData;
-        }
-
-        public static void UpdateUserData(string filePath, UserData userData, int? XP = null, TimeOnly? duration = null)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return;
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet(1);
-
-            if (userData != null)
-            {
-                worksheet.Cell("B4").Value = userData.StreakLength;
-                worksheet.Cell("B2").Value = userData.GemsCount;
-                worksheet.Cell("B1").Value = userData.CurrentCourse;
-                workbook.Save();
-                return; // If userData is provided, we update it and exit
-            }
-
-            if (XP.HasValue)
-            {
-                // Increase the current streak by 1 if the last study was longer than 24 hourse ago 
-                var lastStudyCell = worksheet.Cell("B5");
-                var lastStudy = lastStudyCell.GetValue<DateTime>();
-                if (lastStudy.Date < DateTime.Now.Date && (DateTime.Now - lastStudy).TotalHours < 48)
-                {
-                    var oldStreakLength = worksheet.Cell("B4").GetValue<int>();
-                    worksheet.Cell("B4").Value = oldStreakLength + 1; // Increment streak length
-                }
-                else
-                {
-                    // Reset streak length if the last study was longer than 48 hours ago
-                    if ((DateTime.Now - lastStudy).TotalHours > 48)
-                    {
-                        worksheet.Cell("B4").Value = 1; // Reset streak length
-                    }
-                }
-
-                // update gems count based on XP
-                var oldGemsCount = worksheet.Cell("B2").GetValue<int>();
-                worksheet.Cell("B2").Value = oldGemsCount + (XP.Value / 10); // Assuming 10 XP = 1 gem
-
-                // Update the XP value in cell B3
-                var oldXPValue = worksheet.Cell("B3").GetValue<int>();
-                worksheet.Cell("B3").Value = oldXPValue + XP.Value;
-                workbook.Save();
-            }
-
-            if (duration.HasValue)
-            {
-                worksheet.Cell("B5").Value = DateTime.Now;
-                workbook.Save();
-            }
-
-            // Starting from Row 9 is a list of study sessions with the following columns:
-            // A - Date, B - XP earned, C - Duration
-            // a new row should be added for a study session if there wasn't one added for today
-            int row = 9;
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                if (worksheet.Cell($"A{row}").GetValue<DateTime>().Date == DateTime.Now.Date)
-                {
-                    // A row for today already exists, so we can exit
-                    return;
-                }
-                row++;
-            }
-
-            // If we reach here, it means no row for today exists, so we add a new one
-            worksheet.Cell($"A{row}").Value = DateTime.Now.Date;
-            if (XP.HasValue)
-            {
-                worksheet.Cell($"B{row}").Value = XP.Value;
-            }
-            if (duration.HasValue)
-            {
-                worksheet.Cell($"C{row}").Value = duration.Value.ToString();
-            }
-
-            workbook.Save();
-        }
     }
 }
