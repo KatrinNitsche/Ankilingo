@@ -1,4 +1,5 @@
-﻿using AnkiLingoExcelService.Data;
+﻿using AnkiLingo.Data;
+using AnkiLingoExcelService.Data;
 
 namespace AnkiLingoApp.Models
 {
@@ -32,7 +33,7 @@ namespace AnkiLingoApp.Models
         public string UserAnswer { get; set; }
         public List<string> LeftValues { get; set; } = new List<string>();
         public List<string> RightValues { get; set; } = new List<string>();
-       // public List<ImageWord> ImageWords { get; set; } = new List<ImageWord>();
+        public List<ImageWord> ImageWords { get; set; } = new List<ImageWord>();
         #endregion
     }
 }

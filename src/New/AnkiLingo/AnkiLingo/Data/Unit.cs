@@ -5,5 +5,6 @@
         public Guid SectionId { get; set; }
         public virtual Section Section { get; set; }
         public virtual ICollection<Entry> Entries { get; set; } = new List<Entry>();
+        public int Order { get; set; }
     }
 }

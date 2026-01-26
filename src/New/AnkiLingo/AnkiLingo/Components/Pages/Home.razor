@@ -47,11 +47,11 @@
 
                     @* course content *@
                     var sectionIndex = 1;
-                    @foreach (SectionData sectionData in currentCourse.Sections)
+                    @foreach (SectionData sectionData in currentCourse.Sections.OrderBy(x => x.Order))
                     {
                         var completedSection = true;
                         var unitIndex = 1;
-                        @foreach (UnitData unitData in sectionData.Units)
+                        @foreach (UnitData unitData in sectionData.Units.OrderBy(x => x.Order))
                         {
                             var completedUnit = true;
 
@@ -62,7 +62,7 @@
 
                             <div class="lesson-buttons d-flex flex-column align-items-center">
                                 @{
-                                    var devider = 10;
+                                    var devider = lessonSize;
                                     if (unitData.Entries.Count < devider)
                                     {
                                         devider = unitData.Entries.Count;
@@ -147,7 +147,7 @@
 </AuthorizeView>
 
 @code {
-    private IEnumerable<string> courseList = new List<string>();
+    private IEnumerable<CourseDetails> courseList = new List<CourseDetails>();
     private string errorMessage = string.Empty;
     private CourseData currentCourse;
     private List<EntryData> currentLesson = new List<EntryData>();
@@ -158,6 +158,7 @@
     private bool showStudyModal = false;
     private bool showEntireCourse = false;
     private bool isLoading = true;
+    private int lessonSize = 10;
 
     private List<string> BackgroundColours = new List<string>()
     {
@@ -174,7 +175,7 @@
     {
         try
         {
-            courseList = await databaseService.GetCourseNames();
+            courseList = await databaseService.GetCourseList();
             await LoadUserData();
 
             if (userData != null)
@@ -203,6 +204,13 @@
         try
         {
             currentCourse = await databaseService.GetCourseContent(userData.UserId, courseName);
+            if (currentCourse == null)
+            {
+                errorMessage = "Failed to load course content.";
+                StateHasChanged();
+                return;
+            }
+
             await databaseService.UpdateUserData(userData.UserId, courseName);
 
             foreach (UnitData unit in currentCourse.Sections.SelectMany(s => s.Units))

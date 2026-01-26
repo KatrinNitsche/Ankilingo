@@ -110,51 +110,51 @@
                                     </div>
                                 </div>
                                 break;
-                            // case QuestionType.Image:
-                            //     <div class="image-question text-center">
+                            case QuestionType.Image:
+                                <div class="image-question text-center">
 
-                            //         <div class="d-flex flex row justify-content-between">
+                                    <div class="d-flex flex row justify-content-between">
 
-                            //             @if (entry.ImageWords.Any(x => x.WasChecked == false))
-                            //             {
-                            //                 <div class="image-canvas-container w-50">
-                            //                     <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
-                            //                          style="max-width: 100%; max-height: 100%;" />
-                            //                 </div>
-                            //             }
-                            //             else
-                            //             {
-                            //                 <div class="image-canvas-container w-50">
-                            //                     <img id="mainImage" src="@entry.Value1" alt="@entry.Value1"
-                            //                          style="max-width: 100%; max-height: 100%;" />
-                            //                 </div>
-                            //             }
-                            //             <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
-                            //                 @foreach (var cover in entry.ImageWords)
-                            //                 {
-                            //                     <li class="active list-group-item" style="@StyleForImageCover(cover)">
-                            //                         @if (!cover.WasChecked)
-                            //                         {
-                            //                             <input type="number" class="w-50" @bind="cover.UserInput" />
-                            //                             <br />
-                            //                         }
-                            //                         @cover.Value.Value1
-                            //                     </li>
-                            //                 }
-                            //             </ul>
-                            //         </div>
+                                        @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                                        {
+                                            <div class="image-canvas-container w-50">
+                                                <img id="mainImage" src="@entry.Value2" alt="@entry.Value2"
+                                                     style="max-width: 100%; max-height: 100%;" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="image-canvas-container w-50">
+                                                <img id="mainImage" src="@entry.Value1" alt="@entry.Value1"
+                                                     style="max-width: 100%; max-height: 100%;" />
+                                            </div>
+                                        }
+                                        <ul class="d-flex flex-grid w-50" style="height: 500px; overflow: scroll;">
+                                            @foreach (var cover in entry.ImageWords)
+                                            {
+                                                <li class="active list-group-item" style="@StyleForImageCover(cover)">
+                                                    @if (!cover.WasChecked)
+                                                    {
+                                                        <input type="number" class="w-50" @bind="cover.UserInput" />
+                                                        <br />
+                                                    }
+                                                    @cover.Value.Value1
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
 
-                            //         @if (entry.ImageWords.Any(x => x.WasChecked == false))
-                            //         {
-                            //             <button class="btn btn-primary mt-2" @onclick="CheckImageAnswers">Check My Answers</button>
-                            //         }
+                                    @if (entry.ImageWords.Any(x => x.WasChecked == false))
+                                    {
+                                        <button class="btn btn-primary mt-2" @onclick="CheckImageAnswers">Check My Answers</button>
+                                    }
 
-                            //         <button class="btn btn-primary mt-2" @onclick="NextQuestion">Next Question</button>
+                                    <button class="btn btn-primary mt-2" @onclick="NextQuestion">Next Question</button>
 
 
-                            //     </div>
+                                </div>
 
-                            //     break;
+                                break;
                             default:
                                 <div class="alert alert-danger">
                                     <strong>Error:</strong> Unknown question type.

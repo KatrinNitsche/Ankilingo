@@ -148,7 +148,7 @@
 
 
 @code {
-    private IEnumerable<string> courseList = new List<string>();
+    private IEnumerable<CourseDetails> courseList = new List<CourseDetails>();
     private List<EntryData> Entries { get; set; } = new List<EntryData>();
     private List<EntryData> StudyContent { get; set; } = new List<EntryData>();
     private string errorMessage;
@@ -174,7 +174,7 @@
     {
         try
         {
-            courseList = await databaseService.GetCourseNames();
+            courseList = await databaseService.GetCourseList();
             await LoadUserData();
             selectedCourse = userData.CurrentCourse;
             await LoadCourseContent(userData.CurrentCourse);

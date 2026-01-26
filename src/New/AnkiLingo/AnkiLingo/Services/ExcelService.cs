@@ -112,10 +112,12 @@ namespace AnkiLingoExcelService
             {
                 var sectionName = worksheet.Cell($"A{row}").GetValue<string>();
                 var sectionDescription = worksheet.Cell($"B{row}").GetValue<string>();
+                var order = worksheet.Cell($"C{row}").GetValue<int>();
                 if (!string.IsNullOrEmpty(sectionName) && sectionName != "Sections")
                 {
                     var sectionDetails = GetSectionDetails(filePath, sectionName);
                     sectionDetails.Description = sectionDescription;
+                    sectionDetails.Order = order;
                     courseData.Sections.Add(sectionDetails);
                 }
 
@@ -124,7 +126,7 @@ namespace AnkiLingoExcelService
 
             // addi image data
             courseData.Images = GetImages(filePath);
-                
+          
             return courseData;
         }
 
@@ -160,7 +162,8 @@ namespace AnkiLingoExcelService
                 var unit = new UnitData
                 {
                     Name = worksheet.Cell($"A{row}").GetValue<string>(),
-                    Description = worksheet.Cell($"B{row}").GetValue<string>()
+                    Description = worksheet.Cell($"B{row}").GetValue<string>(),
+                    Order = worksheet.Cell($"C{row}").GetValue<int>(),
                 };
                 section.Units.Add(unit);
                 row++;
@@ -245,7 +248,7 @@ namespace AnkiLingoExcelService
                             LevelOfKnowledge = LevelOfKnowledge,
                             LastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>(),
                             ReviewCount = worksheet.Cell($"H{row}").GetValue<int>()
-                        }
+                        },                        
                     };
                     image.ImageCovers.Add(imageCover);
                 }

@@ -7,10 +7,10 @@ namespace AnkiLingoBackendService
     public interface IDatabaseService
     {
         Task<UserData> GetUserData(Guid userId);
-        Task<IEnumerable<string>> GetCourseNames();
+        Task<IEnumerable<CourseDetails>> GetCourseList();
         Task<CourseData> GetCourseContent(Guid userId, string courseName);
         Task<CourseData> GetCourseDetails(Guid userId, string courseName);
-        Task<bool> AddCourse(Course course);
+        Task<bool> SaveCourse(Course course);
         Task<bool> UpdateEntry(Guid userId, EntryData entry);
         Task<bool> UpdateUserData(Guid userId, int? XP = null, TimeOnly? duration = null);
         Task<bool> UpdateUserData(Guid userId, string currenCourseName);
@@ -21,20 +21,26 @@ namespace AnkiLingoBackendService
         private readonly IUserDataRepository userDataRepository;
         private readonly ICourseRepository courseRepository;
         private readonly IUserCourseDataRepository userCourseDataRepository;
+        private readonly IImageRepository imageRepository;
+        private readonly IImageWordRepository imageWordRepository;
         private readonly ILogger<DatabaseService> _logger;
 
         public DatabaseService(IUserDataRepository userDataRepository,
             ICourseRepository courseRepository,
             ILogger<DatabaseService> logger,
-            IUserCourseDataRepository userCourseDataRepository)
+            IUserCourseDataRepository userCourseDataRepository,
+            IImageRepository imageRepository,
+            IImageWordRepository imageWordRepository)
         {
             _logger = logger;
             this.userDataRepository = userDataRepository;
             this.courseRepository = courseRepository;
             this.userCourseDataRepository = userCourseDataRepository;
+            this.imageRepository = imageRepository;
+            this.imageWordRepository = imageWordRepository;
         }
 
-        public async Task<bool> AddCourse(Course course)
+        public async Task<bool> SaveCourse(Course course)
         {
             try
             {
@@ -42,12 +48,19 @@ namespace AnkiLingoBackendService
                 var existingCourse = await courseRepository.GetCourseByName(course.Name);
                 if (existingCourse != null)
                 {
-                    await courseRepository.UpdateCourse(course);
+                    foreach (var image in course.Images)
+                    {
+                        image.CourseId = existingCourse.Id;
+                    }
+
+                    course.Id = existingCourse.Id;                    
+                    await courseRepository.UpdateCourse(course);                 
                 }
                 else
                 {
-                    await courseRepository.AddCourse(course);
+                    await courseRepository.AddCourse(course);                       
                 }
+
                 return true;
             }
             catch (Exception ex)
@@ -62,9 +75,9 @@ namespace AnkiLingoBackendService
             return await userDataRepository.GetUserDataAsync(userId);
         }
 
-        public async Task<IEnumerable<string>> GetCourseNames()
+        public async Task<IEnumerable<CourseDetails>> GetCourseList()
         {
-            return await courseRepository.GetCourseNamesAsync();
+            return await courseRepository.GetCourseDetailsAsync();
         }
 
         public async Task<CourseData> GetCourseContent(Guid userId, string courseName)
@@ -72,6 +85,7 @@ namespace AnkiLingoBackendService
             if (string.IsNullOrEmpty(courseName)) return new CourseData();
 
             var course = await courseRepository.GetCourseByName(courseName);
+            if (course == null) return new CourseData();
             var userCourseData = await userCourseDataRepository.GetUserCourseDataAsync(userId, course.Id);
 
             var courseData = new CourseData

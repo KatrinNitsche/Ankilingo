@@ -57,9 +57,11 @@
             <ul class="course-list">
                 @if (courseList != null && courseList.Count() > 0)
                 {
-                    @foreach (string course in courseList.ToList())
+                    @foreach (CourseDetails course in courseList.ToList())
                     {
-                        <li class="course-list-entry" @onclick="() => SetCurrentCourse(course)"> <img src="@GetCourseIconPath(course)" alt="Course" class="top-nav-icon" /> @course</li>
+                        <li class="course-list-entry" @onclick="() => SetCurrentCourse(course.Name)">
+                            <img src="@($"images/icons/{course.Icon}.png")" alt="Course" class="top-nav-icon" /> @course.Name
+                        </li>
                     }
                 }
                 <li class="course-list-entry bg-dark" @onclick="AddNewCourse">Add New Course</li>
@@ -84,12 +86,12 @@
 
 @code {
     [Parameter] public Guid userId { get; set; }
-    [Parameter] public int streakCount { get; set; }
+    [Parameter] public int streakCount { get; set; }        
     [Parameter] public int gemsCount { get; set; }
     [Parameter] public DateTime lastStudyDatetime { get; set; }
     [Parameter] public int xpCount { get; set; }
     [Parameter] public CourseData currentCourse { get; set; }
-    [Parameter] public IEnumerable<string> courseList { get; set; } = new List<string>();
+    [Parameter] public IEnumerable<CourseDetails> courseList { get; set; }
 
     private bool streakActive() => (lastStudyDatetime > DateTime.Now.AddHours(-48));
     private bool ShowCourseListDiv;
@@ -104,7 +106,7 @@
     void ShowStreak() { /* Reveal streak details below */ }
     void ShowGems() { /* Reveal gems details below */ }
     void ShowXP() { /* Reveal hearts details below */ }
-    
+
     void ShowCourseList()
     {
         ShowCourseListDiv = true;
@@ -185,19 +187,14 @@
                 Description = courseData.Description,
                 Created = DateTime.Now,
                 Updated = DateTime.Now,
-                Sections = sectionList
+                Sections = sectionList,
+                Images = courseData.Images
             };
 
-            await databaseService.AddCourse(courseToAdd);
+            await databaseService.SaveCourse(courseToAdd);
             await OnCourseChanged.InvokeAsync(courseToAdd.Name);
             ShowAddCourseDiv = false;
             HideCourseList();
         }
-    }
-
-    string GetCourseIconPath(string courseName)
-    {
-        var course = databaseService.GetCourseDetails(userId, courseName).Result;
-        return course != null ? $"images/icons/{course.Icon}.png" : "images/course.png";
     }
 }

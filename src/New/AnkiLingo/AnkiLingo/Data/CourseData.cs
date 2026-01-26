@@ -12,11 +12,20 @@ namespace AnkiLingoExcelService.Data
         public List<ImageData> Images { get; set; } = new List<ImageData>();
     }
 
+    public class CourseDetails
+    {
+        public Guid id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+    }
+
     public class SectionData
     {
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public List<UnitData> Units { get; set; } = new List<UnitData>();
+        public int Order { get; set; }
     }
 
     public class UnitData
@@ -25,6 +34,7 @@ namespace AnkiLingoExcelService.Data
         public string Description { get; set; } = string.Empty;
         public List<EntryData> Entries { get; set; } = new List<EntryData>();
         public string BackgroundColor { get; set; } = string.Empty;
+        public int Order { get; set; }
     }
 
     public class EntryData

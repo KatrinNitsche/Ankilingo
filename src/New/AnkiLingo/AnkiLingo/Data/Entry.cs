@@ -5,5 +5,6 @@
         public virtual Unit Unit { get; set; }    
         public required string Value1 { get; set; }
         public required string Value2 { get; set; }
+        public int Order { get; set; }
     }
 }

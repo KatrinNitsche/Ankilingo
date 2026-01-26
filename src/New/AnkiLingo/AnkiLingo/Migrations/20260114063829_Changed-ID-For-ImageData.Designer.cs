@@ -4,6 +4,7 @@ using AnkiLingo.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AnkiLingo.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260114063829_Changed-ID-For-ImageData")]
+    partial class ChangedIDForImageData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -132,9 +135,6 @@ namespace AnkiLingo.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("UnitId")
                         .HasColumnType("uniqueidentifier");
 
@@ -158,7 +158,7 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.ImageData", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -177,7 +177,7 @@ namespace AnkiLingo.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("id");
 
                     b.HasIndex("CourseId");
 
@@ -186,17 +186,14 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.ImageWord", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("CourseId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("EntryId")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("ImageDataId")
+                    b.Property<Guid?>("ImageDataid")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("UserInput")
@@ -208,15 +205,13 @@ namespace AnkiLingo.Migrations
                     b.Property<bool>("WasChecked")
                         .HasColumnType("bit");
 
-                    b.HasKey("Id");
+                    b.HasKey("id");
 
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("ImageDataId");
+                    b.HasIndex("ImageDataid");
 
                     b.HasIndex("Valueid");
 
-                    b.ToTable("ImageWords");
+                    b.ToTable("ImageWord");
                 });
 
             modelBuilder.Entity("AnkiLingo.Data.Section", b =>
@@ -238,9 +233,6 @@ namespace AnkiLingo.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("Updated")
                         .HasColumnType("datetime2");
@@ -268,9 +260,6 @@ namespace AnkiLingo.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
 
                     b.Property<Guid>("SectionId")
                         .HasColumnType("uniqueidentifier");
@@ -540,23 +529,15 @@ namespace AnkiLingo.Migrations
 
             modelBuilder.Entity("AnkiLingo.Data.ImageWord", b =>
                 {
-                    b.HasOne("AnkiLingo.Data.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("AnkiLingo.Data.ImageData", null)
                         .WithMany("ImageCovers")
-                        .HasForeignKey("ImageDataId");
+                        .HasForeignKey("ImageDataid");
 
                     b.HasOne("AnkiLingoExcelService.Data.EntryData", "Value")
                         .WithMany()
                         .HasForeignKey("Valueid")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Course");
 
                     b.Navigation("Value");
                 });
