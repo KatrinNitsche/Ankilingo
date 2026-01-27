@@ -19,6 +19,7 @@ namespace AnkiLingo.Data
     {
         [Key]
         public Guid Id { get; set; }
+        public Guid ImageId { get; set; }
         public Guid CourseId { get; set; }
         public virtual Course Course { get; set; }
         public int EntryId { get; set; }

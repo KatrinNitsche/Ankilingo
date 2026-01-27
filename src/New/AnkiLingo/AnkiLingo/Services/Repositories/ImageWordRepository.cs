@@ -11,6 +11,7 @@ namespace AnkiLingo.Services.Repositories
         Task UpdateImageWord(ImageWord section);
         Task DeleteImageWord(Guid id);
         Task<ImageWord> GetImageWordByValue(EntryData value);
+        Task<IEnumerable<ImageWord>> GetImageWordsByImageId(Guid id);
     }
 
     public class ImageWordRepository : IImageWordRepository
@@ -53,6 +54,13 @@ namespace AnkiLingo.Services.Repositories
         {
             return _context.ImageWords
                 .FirstOrDefault(iw => iw.Id == value.id);
+        }
+
+        public async Task<IEnumerable<ImageWord>> GetImageWordsByImageId(Guid id)
+        {
+            return _context.ImageWords
+                .Where(iw => iw.ImageId == id)
+                .ToList();
         }
     }
 }

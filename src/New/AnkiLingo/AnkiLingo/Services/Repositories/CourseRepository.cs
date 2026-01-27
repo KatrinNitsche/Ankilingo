@@ -129,6 +129,7 @@ namespace AnkiLingo.Services.Repositories
                                 // set CourseId and navigation so the FK is valid
                                 cover.CourseId = course.Id;
                                 cover.Course = course;
+                                cover.ImageId = img.Id;
 
                                 // if there's a navigation/property to the parent image, set it as well
                                 // (works whether EF uses a FK property or navigation)

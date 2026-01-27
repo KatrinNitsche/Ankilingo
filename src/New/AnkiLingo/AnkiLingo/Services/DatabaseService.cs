@@ -87,7 +87,7 @@ namespace AnkiLingoBackendService
             var course = await courseRepository.GetCourseByName(courseName);
             if (course == null) return new CourseData();
             var userCourseData = await userCourseDataRepository.GetUserCourseDataAsync(userId, course.Id);
-
+                       
             var courseData = new CourseData
             {
                 Name = course.Name,
@@ -116,11 +116,16 @@ namespace AnkiLingoBackendService
 
             if (course.Images != null)
             {
-                course.Images = course.Images.ToList();
+                courseData.Images = course.Images.ToList();
+
+                courseData.Images.ForEach(image =>
+                {
+                    image.ImageCovers = imageWordRepository.GetImageWordsByImageId(image.Id).Result.ToList();
+                });
             }
             else
             {
-                course.Images = new List<ImageData>();
+                courseData.Images = new List<ImageData>();
             }
 
             // add missing entries to userCourseData

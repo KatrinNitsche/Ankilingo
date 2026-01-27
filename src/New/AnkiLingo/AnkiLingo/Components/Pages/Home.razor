@@ -129,6 +129,7 @@
                                       OnClose="() => showCurrentLessonModal = false" />
 
                     <StudyComponent Entries="currentLesson"
+                                    Images="imageList"
                                     Show="showStudyModal"
                                     OnClose="LoadCourseContent"
                                     OnUpdateEntry="(entry) => UpdateEntry(entry)"
@@ -204,6 +205,7 @@
         try
         {
             currentCourse = await databaseService.GetCourseContent(userData.UserId, courseName);
+            imageList = currentCourse.Images;
             if (currentCourse == null)
             {
                 errorMessage = "Failed to load course content.";
@@ -253,9 +255,9 @@
         if (study)
         {
 
-            //  var allOtherEntries = ExcelService.GetEntries(currentCoursePath, sectionName)
-            // .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now &&
-            //             !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
+            var allOtherEntries = currentCourse.Sections.SelectMany(s => s.Units)
+                .SelectMany(u => u.Entries)
+                .Where(x => x.LastReviewed.Year > 1899 && x.LastReviewed < DateTime.Now && !entries.Any(y => y.Value1 == x.Value1 && y.Value2 == x.Value2));
 
             /*
             Initial Review: Ideally, you should review the material within 24 hours of first learning it.
@@ -275,15 +277,15 @@
              */
             var entriesToAdd = new List<EntryData>();
             // get entries that where reviewed 1 time and last reviewed more than 1 day ago
-            // entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 1 && x.LastReviewed < DateTime.Now.AddDays(-1)));
             // get entries that where reviewed 2 times and last reviewed more than 3 days ago
-            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 2 && x.LastReviewed < DateTime.Now.AddDays(-3)));
             // get entries that where reviewed 3 times and last reviewed more than 7 days ago
-            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 3 && x.LastReviewed < DateTime.Now.AddDays(-7)));
             // get entries that where reviewed 4 times and last reviewed more than 14 days ago
-            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 4 && x.LastReviewed < DateTime.Now.AddDays(-14)));
             // get entries that where reviewed 5 times and last reviewed more than 30 days ago
-            //entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
+            entriesToAdd.AddRange(allOtherEntries.Where(x => x.ReviewCount == 5 && x.LastReviewed < DateTime.Now.AddDays(-30)));
 
             // oldest entries first
             entriesToAdd = entriesToAdd.OrderBy(x => x.LastReviewed).ToList();
