@@ -53,12 +53,12 @@ namespace AnkiLingoBackendService
                         image.CourseId = existingCourse.Id;
                     }
 
-                    course.Id = existingCourse.Id;                    
-                    await courseRepository.UpdateCourse(course);                 
+                    course.Id = existingCourse.Id;
+                    await courseRepository.UpdateCourse(course);
                 }
                 else
                 {
-                    await courseRepository.AddCourse(course);                       
+                    await courseRepository.AddCourse(course);
                 }
 
                 return true;
@@ -87,7 +87,7 @@ namespace AnkiLingoBackendService
             var course = await courseRepository.GetCourseByName(courseName);
             if (course == null) return new CourseData();
             var userCourseData = await userCourseDataRepository.GetUserCourseDataAsync(userId, course.Id);
-                       
+
             var courseData = new CourseData
             {
                 Name = course.Name,
@@ -120,7 +120,8 @@ namespace AnkiLingoBackendService
 
                 courseData.Images.ForEach(image =>
                 {
-                    image.ImageCovers = imageWordRepository.GetImageWordsByImageId(image.Id).Result.ToList();
+                    image.ImageWords = imageWordRepository.GetImageWordsByImageId(image.Id).Result.ToList();
+
                 });
             }
             else
@@ -148,6 +149,46 @@ namespace AnkiLingoBackendService
                             entry.ReviewCount = 0;
                             entry.LevelOfKnowledge = 0;
                         }
+                    }
+                }
+            }
+
+            // add missing entries for image words
+            foreach (var image in courseData.Images)
+            {
+                foreach (var imageWord in image.ImageWords)
+                {
+                    var existingEntry = userCourseData.FirstOrDefault(e => e.EntryId == imageWord.Id);
+
+                    if (existingEntry != null)
+                    {
+                        imageWord.EntryData = new EntryData
+                        {
+                            id = imageWord.Id,
+                            CourseId = course.Id,
+                            SectionId = existingEntry.SectionId,
+                            UnitId = existingEntry.UnitId,
+                            Value1 = imageWord.EntryText,
+                            Value2 = string.Empty,
+                            LastReviewed = existingEntry.LastReviewed,
+                            LevelOfKnowledge = existingEntry.LevelOfKnowledge,
+                            ReviewCount = existingEntry.ReviewCount
+                        };                     
+                    }
+                    else
+                    {
+                        imageWord.EntryData = new EntryData
+                        {
+                            id = imageWord.Id,
+                            CourseId = course.Id,
+                            SectionId = course.Sections.FirstOrDefault(x => x.Name == image.SectionName)?.Id ?? Guid.Empty,
+                            UnitId = course.Sections.FirstOrDefault(x => x.Name == image.SectionName)?.Units.FirstOrDefault(u => u.Name == image.UnitName)?.Id ?? Guid.Empty,
+                            Value1 = imageWord.EntryText,
+                            Value2 = string.Empty,
+                            LastReviewed = DateTime.MinValue,
+                            LevelOfKnowledge = 0,
+                            ReviewCount = 0                            
+                        };
                     }
                 }
             }

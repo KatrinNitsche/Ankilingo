@@ -138,7 +138,7 @@
                                                         <input type="number" class="w-50" @bind="cover.UserInput" />
                                                         <br />
                                                     }
-                                                    @cover.Value.Value1
+                                                    @cover.EntryText
                                                 </li>
                                             }
                                         </ul>
@@ -231,7 +231,7 @@
                     Options = new List<string>(),
                     LeftValues = new List<string>(),
                     RightValues = new List<string>(),
-                    ImageWords = img.ImageCovers.OrderBy(i => Guid.NewGuid()).ToList()
+                    ImageWords = img.ImageWords.OrderBy(i => Guid.NewGuid()).ToList()
                 });
             }
         }
@@ -509,33 +509,31 @@
     private void CheckImageAnswers()
     {
         var currentImage = questions[currentQuestionIndex];
-        // foreach (var entry in currentImage.ImageWords)
-        // {
-        //     entry.WasChecked = true;
-        //     entry.Value.LastReviewed = DateTime.Now;
-        //     if (entry.Id == entry.UserInput)
-        //     {
-        //         if (entry.Value.LevelOfKnowledge < 10)
-        //         {
-        //             entry.Value.LevelOfKnowledge++;
-        //         }
-        //         xp += 2;
-        //         correctAnswersCount++;
-        //     }
-        //     else
-        //     {
-        //         if (entry.Value.LevelOfKnowledge > 0)
-        //         {
-        //             entry.Value.LevelOfKnowledge--;
-        //         }
-        //         xp -= 2;
-        //         incorrectAnswersCount++;
-        //     }
+        foreach (var entry in currentImage.ImageWords)
+        {
+            entry.WasChecked = true;
+            entry.EntryData.LastReviewed = DateTime.Now;
+            if (entry.EntryId == entry.UserInput)
+            {
+                if (entry.EntryData.LevelOfKnowledge < 10)
+                {
+                    entry.EntryData.LevelOfKnowledge++;
+                }
+                xp += 2;
+                correctAnswersCount++;
+            }
+            else
+            {
+                if (entry.EntryData.LevelOfKnowledge > 0)
+                {
+                    entry.EntryData.LevelOfKnowledge--;
+                }
+                xp -= 2;
+                incorrectAnswersCount++;
+            }
 
-        //     var filePath = @"C:\temp\AnkiLingo";
-        //     var currentCoursePath = $"{filePath}\\{CurrentCourse.Name}.xlsx";
-        //     ExcelService.UpdateImageEntry(currentCoursePath, currentSection, currentUnit, currentImage.AnswerText, entry.Id, entry.Value.LevelOfKnowledge);
-        // }
+            databaseService.UpdateEntry(userData.UserId, entry.EntryData);
+        }
     }
 
     private string StyleForImageCover(ImageWord question)

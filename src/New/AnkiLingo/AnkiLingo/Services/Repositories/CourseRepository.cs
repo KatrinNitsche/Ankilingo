@@ -120,39 +120,13 @@ namespace AnkiLingo.Services.Repositories
                         img.CourseId = course.Id;
 
                         // Ensure every ImageWord (cover) is fully associated with the course and parent image.
-                        if (img.ImageCovers != null)
+                        if (img.ImageWords != null)
                         {
-                            foreach (var cover in img.ImageCovers)
+                            foreach (ImageWord cover in img.ImageWords)
                             {
                                 if (cover.Id == Guid.Empty) cover.Id = Guid.NewGuid();
 
-                                // set CourseId and navigation so the FK is valid
-                                cover.CourseId = course.Id;
-                                cover.Course = course;
                                 cover.ImageId = img.Id;
-
-                                // if there's a navigation/property to the parent image, set it as well
-                                // (works whether EF uses a FK property or navigation)
-                                try
-                                {
-                                    // assign parent image navigation if property exists
-                                    cover.GetType().GetProperty("ImageData")?.SetValue(cover, img);
-                                    // assign ImageDataId property if it exists
-                                    var prop = cover.GetType().GetProperty("ImageDataId");
-                                    if (prop != null) prop.SetValue(cover, img.Id);
-                                }
-                                catch
-                                {
-                                    // ignore reflection failures; primary assignment is cover.Course and cover.CourseId
-                                }
-
-                                // If the cover has a Value (EntryData), make sure it references the new course and has an id
-                                if (cover.Value != null)
-                                {
-                                    if (cover.Value.id == Guid.Empty) cover.Value.id = Guid.NewGuid();
-                                    cover.Value.CourseId = course.Id;
-                                    // it's useful to set EntryId if that is used as an int index — but keep existing EntryId
-                                }
                             }
                         }
                     }
@@ -187,7 +161,7 @@ namespace AnkiLingo.Services.Repositories
                 // Load existing course and related children
                 var existingCourse = await _dbContext.Courses
                     .Include(c => c.Images)
-                        .ThenInclude(i => i.ImageCovers)
+                        .ThenInclude(i => i.ImageWords)
                     .Include(c => c.Sections)
                         .ThenInclude(s => s.Units)
                             .ThenInclude(u => u.Entries)
@@ -341,13 +315,11 @@ namespace AnkiLingo.Services.Repositories
                         if (incomingImage.Id == Guid.Empty) incomingImage.Id = Guid.NewGuid();
                         incomingImage.CourseId = existingCourse.Id;
 
-                        if (incomingImage.ImageCovers != null)
+                        if (incomingImage.ImageWords != null)
                         {
-                            foreach (var cover in incomingImage.ImageCovers)
+                            foreach (var cover in incomingImage.ImageWords)
                             {
-                                if (cover.Id == Guid.Empty) cover.Id = Guid.NewGuid();
-                                cover.CourseId = existingCourse.Id;
-                                // assign back-reference if needed
+                                if (cover.Id == Guid.Empty) cover.Id = Guid.NewGuid();                              
                             }
                         }
 
@@ -360,8 +332,8 @@ namespace AnkiLingo.Services.Repositories
                         existingImage.CourseId = existingCourse.Id;
 
                         // sync image covers
-                        var incomingCovers = incomingImage.ImageCovers ?? new List<ImageWord>();
-                        var existingCovers = existingImage.ImageCovers ?? new List<ImageWord>();
+                        var incomingCovers = incomingImage.ImageWords ?? new List<ImageWord>();
+                        var existingCovers = existingImage.ImageWords ?? new List<ImageWord>();
 
                         var incomingCoverIds = incomingCovers.Select(c => c.Id).Where(id => id != Guid.Empty).ToHashSet();
                         foreach (var ec in existingCovers.Where(c => !incomingCoverIds.Contains(c.Id)).ToList())
@@ -373,15 +345,13 @@ namespace AnkiLingo.Services.Repositories
                         {
                             if (incomingCover.Id == Guid.Empty || !existingCovers.Any(c => c.Id == incomingCover.Id))
                             {
-                                if (incomingCover.Id == Guid.Empty) incomingCover.Id = Guid.NewGuid();
-                                incomingCover.CourseId = existingCourse.Id;
-                                existingImage.ImageCovers.Add(incomingCover);
+                                if (incomingCover.Id == Guid.Empty) incomingCover.Id = Guid.NewGuid();                             
+                                existingImage.ImageWords.Add(incomingCover);
                             }
                             else
                             {
                                 var existingCover = existingCovers.First(c => c.Id == incomingCover.Id);
-                                _dbContext.Entry(existingCover).CurrentValues.SetValues(incomingCover);
-                                existingCover.CourseId = existingCourse.Id;
+                                _dbContext.Entry(existingCover).CurrentValues.SetValues(incomingCover);                              
                             }
                         }
                     }

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace AnkiLingoExcelService
 {
-    public static class ExcelService 
+    public static class ExcelService
     {
         public static CourseData LoadCourseFromExcel(IBrowserFile? file)
         {
@@ -57,15 +57,9 @@ namespace AnkiLingoExcelService
                     {
                         var value1 = worksheet.Cell($"B{sectionRow}").GetValue<string>();
                         var value2 = worksheet.Cell($"C{sectionRow}").GetValue<string>();
-                        var levelOfKnowledge = worksheet.Cell($"D{sectionRow}").GetValue<int>();
-                        var lastReviewed = worksheet.Cell($"E{sectionRow}").GetValue<DateTime>();
-                        var reviewCount = worksheet.Cell($"F{sectionRow}").GetValue<int>();
-
+                      
                         var entry = new EntryData
                         {
-                            LastReviewed = lastReviewed,
-                            LevelOfKnowledge = levelOfKnowledge,
-                            ReviewCount = reviewCount,
                             Value1 = value1,
                             Value2 = value2
                         };
@@ -126,7 +120,7 @@ namespace AnkiLingoExcelService
 
             // addi image data
             courseData.Images = GetImages(filePath);
-          
+
             return courseData;
         }
 
@@ -176,7 +170,7 @@ namespace AnkiLingoExcelService
             {
                 var value1 = worksheet.Cell($"B{row}").GetValue<string>();
                 var value2 = worksheet.Cell($"C{row}").GetValue<string>();
-           
+
                 var entry = new EntryData
                 {
                     Value1 = value1,
@@ -220,15 +214,13 @@ namespace AnkiLingoExcelService
                         SectionName = sectionName,
                         UnitName = unitName,
                         ImageName = imageName,
-                        ImageCovers = new List<ImageWord>()
+                        ImageWords = new List<ImageWord>()
                     };
                     images.Add(image);
                 }
 
                 // the following columns can be empty or contain data for an image cover
-                if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty() ||
-                    worksheet.Cell($"F{row}").IsEmpty() || worksheet.Cell($"G{row}").IsEmpty() ||
-                    worksheet.Cell($"H{row}").IsEmpty())
+                if (worksheet.Cell($"D{row}").IsEmpty() || worksheet.Cell($"E{row}").IsEmpty())
                 {
                     row++;
                 }
@@ -236,58 +228,22 @@ namespace AnkiLingoExcelService
                 {
                     var index = worksheet.Cell($"D{row}").GetValue<int>();
                     var Value1 = worksheet.Cell($"E{row}").GetValue<string>();
-                    var Value2 = string.Empty;
-                    var LevelOfKnowledge = worksheet.Cell($"F{row}").GetValue<int>();
+                    var Value2 = string.Empty;                  
                     var imageCover = new ImageWord
                     {
                         EntryId = index,
-                        Value = new EntryData
-                        {
-                            Value1 = Value1,
-                            Value2 = Value2,
-                            LevelOfKnowledge = LevelOfKnowledge,
-                            LastReviewed = worksheet.Cell($"G{row}").GetValue<DateTime>(),
-                            ReviewCount = worksheet.Cell($"H{row}").GetValue<int>()
-                        },                        
+                        EntryText = Value1,
+                        WasChecked = false,
+                        UserInput = 0,
+                        EntryData = null
                     };
-                    image.ImageCovers.Add(imageCover);
+                    image.ImageWords.Add(imageCover);
                 }
 
                 row++;
             }
 
             return images;
-        }
-
-        public static bool UpdateImageEntry(string filePath, string sectionName, string unitName, string imageName, int index, int levelOfKnowledge)
-        {
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"File {filePath} does not exist.");
-                return false;
-            }
-            using var workbook = new XLWorkbook(filePath);
-            var worksheet = workbook.Worksheet("Images");
-            int row = 3;
-            while (!worksheet.Cell($"A{row}").IsEmpty())
-            {
-                if (worksheet.Cell($"A{row}").GetValue<string>() == sectionName &&
-                    worksheet.Cell($"B{row}").GetValue<string>() == unitName &&
-                    worksheet.Cell($"C{row}").GetValue<string>() == imageName &&
-                    worksheet.Cell($"D{row}").GetValue<int>() == index)
-                {
-                    var reviewCountCell = worksheet.Cell($"H{row}");
-                    int newReviewCount = reviewCountCell.GetValue<int>() + 1;
-                    reviewCountCell.Value = newReviewCount;
-                    worksheet.Cell($"F{row}").Value = levelOfKnowledge;
-                    worksheet.Cell($"G{row}").Value = DateTime.Now; // Update Last Reviewed to now
-                    workbook.Save();
-                    return true;
-                }
-                row++;
-            }
-            Console.WriteLine("Entry not found.");
-            return false;
         }
     }
 }
