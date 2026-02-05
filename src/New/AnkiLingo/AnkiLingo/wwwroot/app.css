@@ -139,26 +139,6 @@ h1:focus {
     }
 
 
-/* Modals */
-.modal-content ul {
-    list-style: none;
-    display: flex;
-    flex-flow: row;
-    flex-wrap: wrap
-}
-
-    .modal-content ul li {
-        padding: 5px;
-        border: 1px solid black;
-        border-radius: 10px;
-        margin: 10px;
-        width: 40%;
-    }
-
-        .modal-content ul li span {
-            margin-right: 10px;
-        }
-
 /* study modal */
 .multiple-choice-questions {
     display: flex;

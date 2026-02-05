@@ -4,11 +4,23 @@ using AnkiLingo.Data;
 using AnkiLingo.Services;
 using AnkiLingo.Services.Repositories;
 using AnkiLingoBackendService;
+using Blazorise;
+using Blazorise.Bootstrap5;
+using Blazorise.Icons.FontAwesome;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Blazorise
+builder.Services
+    .AddBlazorise(options =>
+    {
+        options.Immediate = true;
+    })
+    .AddBootstrap5Providers()
+    .AddFontAwesomeIcons();
 
 // Add logging providers so EF SQL and errors appear in console
 builder.Logging.ClearProviders();
